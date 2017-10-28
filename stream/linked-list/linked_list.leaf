@@ -1,0 +1,63 @@
+//Space: Θ(N)
+class linked_list｢T｣ {
+
+	class node｢T｣ {
+		var value : T
+		var next_node : optional shared node｢T｣
+	}
+	
+	//points to first item in the list
+	var head : optional shared node｢T｣
+	//points to last item in the list
+	var tail : optional shared node｢T｣
+
+	// Time: Θ(1)
+	// Space: Θ(1)
+	defn append = ( x : T ) -> {
+	
+		var n = type｢shared node｢T｣｣() 
+		n.value = x
+		
+		not has(head) then {
+			head = n
+			tail = n
+		} else {
+			getopt(tail).next_node = n
+			tail = n
+		}
+	}
+	
+	defn clear = -> {
+		//TODO: should have worked
+		//head = type｢optional shared node｢T｣｣()
+		
+		var none : optional shared node｢T｣
+		head = none
+		tail = head
+	}
+
+	// Time: Θ(N)
+	// Space: Θ(1)
+	defn foreach = ( fn : ( : shared node｢T｣ ) -> () ) -> {
+		var n = head
+		while has(n) {
+			fn( getopt(n) )
+			n = getopt(n).next_node
+		}
+	}
+ 	
+	// Time: Θ(N)
+	// Space: Θ(N)
+	defn foreach_reverse = ( fn : ( : shared node｢T｣ ) -> () ) -> () {
+		//TODO: didn't work with leading underscore in name
+		foreach_reverse_impl( fn, head )
+	}
+ 	
+	defn foreach_reverse_impl = ( fn : ( : shared node｢T｣ ) -> (), 
+		n : optional shared node｢T｣ ) -> () {
+		
+		not has(n) then return
+		foreach_reverse_impl( fn, getopt(n).next_node )
+		fn( getopt(n) )
+	}
+}

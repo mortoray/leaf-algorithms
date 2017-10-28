@@ -1,0 +1,61 @@
+import std
+
+var main = -> {
+	var q : linked_list｢integer｣
+
+	q.append( 6 )
+	q.append( 7 )
+	q.append( 8 )
+	q.append( 9 )
+	
+	dump(q)
+	dump_reverse(q)
+	std.println([ "sum: ", sum(q) ])
+	
+	
+	//TODO: should have worked even if ugly....
+	//std.println( [ q.head?.next_node?.value | 0 ] )
+	
+	q.clear()
+	
+	
+	//using characters
+	var r  : linked_list｢char｣
+	r.append( 'a' )
+	r.append( 'b' )
+	r.append( '☹' )
+	dump(r)
+	
+	
+	//using float
+	var f : double_linked_list｢float｣
+	f.append( 2.5 )
+	f.append( 7.1 )
+	f.append( 3.7 )
+	dump(f)
+	std.println([ "SumFloat: ", sum(f)])
+	f.clear()
+}
+
+defn dump = ( q ) -> {
+	q.foreach( (n)-> {
+		std.print([ n.value, " " ])
+	})
+	std.println([])
+}
+
+defn dump_reverse = ( q ) -> {
+	q.foreach_reverse( (n)-> {
+		std.print([ n.value, " " ])
+	})
+	std.println([])
+}
+
+defn sum = ( q ) -> ( : float ) {
+	var c : float = 0
+	q.foreach( (n) -> {
+		c += lossy(n.value)
+	})
+	return c
+}
+

@@ -1,0 +1,64 @@
+//Space: Θ(N)
+class double_linked_list｢T｣ {
+
+	class node｢T｣ {
+		var value : T
+		var next_node : optional shared node｢T｣
+		var prev_node : optional shared node｢T｣
+	}
+	
+	//points to first item in the list
+	var head : optional shared node｢T｣
+	//points to last item in the list
+	var tail : optional shared node｢T｣
+
+	// Time: Θ(1)
+	// Space: Θ(1)
+	defn append = ( x : T ) -> {
+	
+		var n = type｢shared node｢T｣｣() 
+		n.value = x
+		
+		not has(head) then {
+			head = n
+			tail = n
+		} else {
+			n.prev_node = tail
+			getopt(tail).next_node = n
+			tail = n
+		}
+	}
+	
+	defn clear = -> {
+		var none : optional shared node｢T｣
+		
+		var cur = head
+		while has(cur) {
+			getopt(cur).prev_node = none
+			var nxt = getopt(cur).next_node
+			getopt(cur).next_node = none
+			cur = nxt
+		}
+		head = none
+	}
+
+	// Time: Θ(N)
+	// Space: Θ(1)
+	defn foreach = ( fn : ( : shared node｢T｣ ) -> () ) -> {
+		var n = head
+		while has(n) {
+			fn( getopt(n) )
+			n = getopt(n).next_node
+		}
+	}
+ 	
+	// Time: Θ(N)
+	// Space: Θ(1)
+	defn foreach_reverse = ( fn : ( : shared node｢T｣ ) -> () ) -> () {
+		var n = tail
+		while has(n) {
+			fn( getopt(n) )
+			n = getopt(n).prev_node
+		}
+	}
+}
