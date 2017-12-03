@@ -12,9 +12,7 @@ var main = -> {
 	dump_reverse(q)
 	std.println([ "sum: ", sum(q) ])
 	
-	
-	//TODO: should have worked even if ugly....
-	//std.println( [ q.head?.next_node?.value | 0 ] )
+	std.println( [ q.head?.next_node?.value | 0 ] )
 	
 	q.clear()
 	

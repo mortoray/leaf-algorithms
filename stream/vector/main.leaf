@@ -1,0 +1,165 @@
+import std
+
+// Space: Θ(N)
+class vector｢T｣ {
+	var _data : shared array｢T｣
+	var _capacity : integer
+	var _size : integer
+	
+	defn default = -> construct {
+		_size = 0
+		_capacity = 2
+		_data = type｢shared array｢T｣｣(_capacity)
+	}
+
+	// Time: Θ(1) amortized constant time
+	defn add = ( x : T ) -> {
+		_size >= _capacity then expand()
+
+		//Θ(1)
+		_data#_size = x
+		_size += 1
+	}
+
+	// Time: Θ(N)
+	defn expand = -> {
+		var nc = _capacity * 2
+		var nd = type｢shared array｢T｣｣(nc)
+		
+		for i in std.range(0,_size) {
+			nd#i = _data#i
+		}
+		
+		_capacity = nc
+		_data = nd
+	}
+	
+	// Time: Θ(N)
+	defn remove = ( index : integer ) -> {
+		//index < 0 or index >= _size then fail string_tag( "remove-from-empty" )
+		
+		for i in std.range( index, _size ) {
+			_data#i = _data#(i+1)
+		}
+		_data#(_size-1) = type｢T｣()
+		_size -= 1
+	}
+	
+	// Time: Θ(1)
+	defn pop_back = -> {
+		//TODO: _size == 0 then fail string_tag( "no-more-items" )
+		
+		var q = _data#(_size-1) //Θ(1)
+		remove(_size-1) //Θ(N) -- but really only Θ(1) when index = _size -1
+		//_data#(_size-1) = type｢T｣()
+		//_size -= 1
+		return q
+	}
+	
+	// Time: Θ(N)
+	defn pop_front = -> {
+		var q = _data#0 //Θ(1)
+		remove(0) //Θ(N)
+		return q
+	}
+	
+	// Time: Θ(1)
+	defn get_size = -> {
+		return _size
+	}
+	
+	// Time: Θ(1)  Not amortized, strict
+	defn get = ( index : integer ) -> {
+		//TODO:  failing to instantiate template
+		//index < 0 or index >= _size then fail string_tag( "invalid-index" )
+		
+		return _data#index
+	}
+	
+	// Time: Θ(N) * Θ(f)
+	defn foreach = ( f : ( : T ) -> () ) -> {
+		for i in std.range(0, _size) {
+			f( _data#i )
+		}
+	}
+	
+	// Time: Θ(N) * Θ(f)
+	defn foreach_reverse = ( f : ( : T ) -> () ) -> {
+		for i in std.range(_size-1, -1) {
+			f( _data#i )
+		}
+	}
+	
+	defn fold = ( op : ( : T, : T ) -> ( : T) ) -> {
+		var accum = op( _data#0, _data#1 )
+		for i in std.range(2, _size) {
+			accum = op( accum, _data#i )
+		}
+		
+		return accum
+	}
+}
+
+defn dump = ( q ) -> {
+	q.foreach( (n)-> {
+		std.print([ n, " " ])
+	})
+	std.println([])
+}
+
+defn dump_reverse = ( q ) -> {
+	q.foreach_reverse( (n)-> {
+		std.print([ n, " " ])
+	})
+	std.println([])
+}
+
+defn sum = ( q ) -> ( : float ) {
+	var c : float = 0
+	q.foreach( (n) -> {
+		c += lossy(n)
+	})
+	return c
+}
+
+
+var main = -> {
+
+	var q : vector｢integer｣
+	for i in std.range(5,15) {
+		q.add( i * 1 )
+	}
+	
+	dump(q)
+	dump_reverse(q)
+	std.println( ["Sum: ", sum(q)] )
+	std.println( ["FoldSum: ", q.fold( (a,b) -> { 
+		return a + b
+	}) ])
+	std.println( ["FoldProduct: ", q.fold( (a,b) -> { 
+		return a * b
+	}) ])
+
+	std.println([ " - - - - " ])
+	q.remove( 5 )
+	dump(q)
+	dump_reverse(q)
+	std.println( ["Sum: ", sum(q)] )
+
+	
+	while q.get_size() > 0 {
+		std.println( ["Pop: ", q.pop_back() ])
+	}
+	
+	var f : vector｢float｣
+	for i in std.range(5,15) {
+		f.add( lossy(i) * 100 )
+	}
+	std.println( ["FoldProduct: ", f.fold( (a,b) -> { 
+		return a * b
+	}) ])
+	
+	
+	var g = q.get(0)
+	//TODO: var g = q#0
+}

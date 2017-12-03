@@ -28,12 +28,7 @@ class linked_list｢T｣ {
 	}
 	
 	defn clear = -> {
-		//TODO: should have worked
-		//head = type｢optional shared node｢T｣｣()
-		
-		var none : optional shared node｢T｣
-		head = none
-		tail = head
+		head = type｢optional shared node｢T｣｣()
 	}
 
 	// Time: Θ(N)
@@ -49,15 +44,14 @@ class linked_list｢T｣ {
 	// Time: Θ(N)
 	// Space: Θ(N)
 	defn foreach_reverse = ( fn : ( : shared node｢T｣ ) -> () ) -> () {
-		//TODO: didn't work with leading underscore in name
-		foreach_reverse_impl( fn, head )
+		_foreach_reverse_impl( fn, head )
 	}
  	
-	defn foreach_reverse_impl = ( fn : ( : shared node｢T｣ ) -> (), 
+	defn _foreach_reverse_impl = ( fn : ( : shared node｢T｣ ) -> (), 
 		n : optional shared node｢T｣ ) -> () {
 		
 		not has(n) then return
-		foreach_reverse_impl( fn, getopt(n).next_node )
+		_foreach_reverse_impl( fn, getopt(n).next_node )
 		fn( getopt(n) )
 	}
 }
