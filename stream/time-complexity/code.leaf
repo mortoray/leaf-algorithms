@@ -1,0 +1,63 @@
+import std
+import sys
+
+defn sum_numbers = ( v : array｢float｣ ) ->  {
+
+	var total : float = 0
+	for i in std.range(0, v.size) {
+		total += v#i
+	}
+	
+	return total
+}
+
+defn mult_matrices = ( m : array｢matrix｣ ) ->  {
+
+	var r = m#0
+	for i in std.range(1, m.size) {
+		r *= m#i
+	}
+	
+	return r
+}
+
+defn print_checker = ( cols : integer, rows : integer ) -> {
+
+	for i in std.range( 0, rows ) {
+		for j in std.range( 0, cols ) {
+			var dark = mod( i + j, 2 ) == 0
+			std.print( dark ? "█▉" | "  " )
+		}
+		
+		std.println([])
+	}
+}
+
+defn index_of = ( v : array｢integer｣, find : integer ) -> {
+
+	for i in std.range( 0, v.size ) {
+		find == v#i then return i
+	}
+	
+	return -1
+}
+
+var main = -> {
+
+	var args = sys.get_args()
+	args.size == 2 then {
+		var cols = std.ascii_to_integer( args#0 )
+		var rows = std.ascii_to_integer( args#1 )
+		print_checker(cols,rows)
+	}
+}
+
+typedef matrix : [ 
+	value : integer
+]
+
+defn mul  = ( a : matrix, b : matrix ) -> {
+	var c = a
+	c.value *= b.value
+	return c
+}

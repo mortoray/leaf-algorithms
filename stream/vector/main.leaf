@@ -36,7 +36,7 @@ class vector｢T｣ {
 	
 	// Time: Θ(N)
 	defn remove = ( index : integer ) -> {
-		//index < 0 or index >= _size then fail string_tag( "remove-from-empty" )
+		index < 0 or index >= _size then fail string_tag( "remove-from-empty" )
 		
 		for i in std.range( index, _size ) {
 			_data#i = _data#(i+1)
@@ -47,12 +47,15 @@ class vector｢T｣ {
 	
 	// Time: Θ(1)
 	defn pop_back = -> {
-		//TODO: _size == 0 then fail string_tag( "no-more-items" )
+		_size == 0 then fail string_tag( "no-more-items" )
 		
 		var q = _data#(_size-1) //Θ(1)
 		remove(_size-1) //Θ(N) -- but really only Θ(1) when index = _size -1
+		
+		//optimized, but more prone to defects (especially if remove logic changes)
 		//_data#(_size-1) = type｢T｣()
 		//_size -= 1
+		
 		return q
 	}
 	
@@ -70,8 +73,7 @@ class vector｢T｣ {
 	
 	// Time: Θ(1)  Not amortized, strict
 	defn get = ( index : integer ) -> {
-		//TODO:  failing to instantiate template
-		//index < 0 or index >= _size then fail string_tag( "invalid-index" )
+		index < 0 or index >= _size then fail string_tag( "invalid-index" )
 		
 		return _data#index
 	}
@@ -160,6 +162,10 @@ var main = -> {
 	}) ])
 	
 	
-	var g = q.get(0)
+	do {
+		var g = q.get(0)
+	} on fail {
+		std.print(current_fail)
+	}
 	//TODO: var g = q#0
 }

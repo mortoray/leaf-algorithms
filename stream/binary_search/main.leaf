@@ -1,0 +1,54 @@
+import std
+
+var main = -> {
+	var q = to_array([-7,0,2,12,31,44,105,200])
+	//var q = to_array([2,-7,0,12,200,31,31,105])
+	print(q)
+	find(q,2)
+	find(q,5)
+	find(q,-7)
+	find(q,201)
+	find(q,105)
+}
+
+defn find = (items, x) -> {
+	var ndx = binary_search( items, x )
+	ndx == -1 then {
+		std.println(["Did not find ", x])
+	} else {
+		std.println([ "Found ", x, " at ", ndx, " == ", items#ndx ])
+	}
+}
+
+defn binary_search = ( items, q ) -> ( :integer) {
+	return binary_search_impl_nr( items, q, 0, items.size )
+}
+
+// O(log N) : Search doesn't take more than log N comparisons
+// Ω(log N) : Search doesn't take less than log N comparisons
+// T(N) = log_2(N) + 1
+
+// Time complexity:  Θ(log N)    
+// Space Complexity: Θ(log N)  <-- ??
+defn binary_search_impl = ( items, q, lo : integer, hi : integer ) -> (:integer) {
+	var mid = (lo + hi) / 2
+	items#mid == q then return mid
+	lo == hi then return -1
+	
+	var nxt = items#mid < q ? [ mid +1, hi ] | [ lo, mid - 1 ]
+	return binary_search_impl( items, q, nxt#0, nxt#1 )
+}
+
+// Space Complexity: Θ(1)
+defn binary_search_impl_nr = ( items, q, lo : integer, hi : integer ) -> (:integer) {
+	while true {
+		var mid = (lo + hi) / 2
+		items#mid == q then return mid
+		lo == hi then return -1
+		( lo, hi ) = items#mid < q ? ( mid +1, hi ) | ( lo, mid - 1 )
+	}
+}
+
+
+
+

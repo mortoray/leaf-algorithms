@@ -1,0 +1,36 @@
+defn find = ( items, q ) -> {
+	var ndx = binary_search( items, q )
+	ndx == -1 then {
+		std.println([q, " was not found"])
+	} else {
+		std.println([q, " found at index ", ndx, " == ", items#ndx])
+	}
+}
+
+//TODO: why doesn't this work?
+// defn abinary_search = ( items : shared array｢integer｣, q : integer ) -> ( index : integer ) {
+// 
+// 	defn impl = ( lo : integer, hi : integer ) -> ( index : integer ) {
+// 		lo == hi then return items#lo == q ? lo | -1
+// 		
+// 		var mid = (lo + hi) / 2
+// 		var nxt = items#mid > q ? [lo, mid-1] | [mid, hi]
+// 		return impl(nxt#0, nxt#1)
+// 	}
+// 	
+// 	return impl(0, items.size)
+// }
+
+defn binary_search = ( items : shared array｢any｣, q ) -> ( index : integer ) {
+	return binary_search_impl(items, q, 0, items.size)
+}
+
+defn binary_search_impl = ( items : shared array｢any｣, q,  lo : integer, hi : integer ) -> ( index : integer ) {
+	var mid = (lo + hi) / 2
+	items#mid == q then return mid
+	lo == hi then return -1
+	
+	var nxt = items#mid > q ? [lo, mid-1] | [mid+1, hi]
+	return binary_search_impl(items, q, nxt#0, nxt#1)
+}
+	

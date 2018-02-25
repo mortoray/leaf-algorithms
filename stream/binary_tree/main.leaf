@@ -1,0 +1,153 @@
+import std
+
+/*
+	Space Complexity:
+		Θ(N)
+*/
+class binary_tree｢T｣ {
+
+	class node｢T｣ {
+		var value : T
+		var left : optional shared node｢T｣
+		var right : optional shared node｢T｣
+	}
+	
+	var root : optional shared node｢T｣
+	
+	/*
+		Time Complexity
+		Worst-Case:
+			Balanced?  Θ(log N)
+			Unbalanced?  Θ(N)
+			
+		Base-Case:
+			O(1)
+			
+		"Average-Case": 
+			Θ(log N)
+	*/
+	defn add = ( item : T ) -> {
+		var n = type｢shared node｢T｣｣()
+		n.value = item
+		
+		not has(root) then {
+			root = n
+			return
+		}
+		
+		var consider = getopt(root)
+		while true {
+			item > consider.value then {
+				not has(consider.right) then {
+					consider.right = n
+					return
+				}
+				
+				consider = getopt(consider.right)
+			} else {
+				not has(consider.left) then {
+					consider.left = n
+					return
+				}
+				
+				consider = getopt(consider.left)
+			}
+		}
+	}
+	
+	/**
+		Time Complexity same as `add`
+	*/
+	defn find = ( item : T ) -> ( x : boolean ) {
+		not has(root) then return
+		
+		var consider = getopt(root)
+		while true {
+			item == consider.value then return  true
+			
+			item > consider.value then {
+				not has(consider.right) then return
+				consider = getopt(consider.right)
+			} else {
+				not has(consider.left) then return
+				consider = getopt(consider.left)
+			}
+		}
+	}
+
+	/**
+		Time Complexity:
+			Θ(N)
+			
+		Space Complexity:
+			Balanced? Θ(log N)
+			Unbalanced?  Θ(N)
+	*/
+	defn dump = -> {
+		walk( (item) -> {
+			std.print(item)
+			std.print(" ")
+		})
+		std.println([])
+	}
+	
+	defn walk = ( f : ( item : T )->() ) -> {
+		_walk_node( f, root )
+	}
+	
+	defn _walk_node = ( f : (item : T)->(), 
+		n : optional shared node｢T｣ ) -> () {
+		not has(n) then return
+		
+		_walk_node( f, getopt(n).left )
+		f(getopt(n).value)
+		_walk_node( f, getopt(n).right )
+	}
+	
+	defn depth = -> {
+		return _depth_node(root)
+	}
+	
+	defn _depth_node = ( n : optional shared node｢T｣ ) -> ( : integer ) {
+		not has(n) then return 0
+		
+		var left = _depth_node( getopt(n).left )
+		var right = _depth_node( getopt(n).right )
+		
+		return max(left,right) + 1
+	}
+}
+
+defn max = (a,b) -> {
+	return a > b ? a | b
+}
+
+var main = -> {
+	var bt  = type｢shared binary_tree｢integer｣｣()
+	
+	foreach( [ 3, 2, 5, 8, 1 ], (item) -> {
+		//std.println(["Adding ", item])
+		bt.add( item )
+		//bt.dump()
+	})
+	bt.dump()
+	std.println(["Depth: ", bt.depth()])
+	
+	var sum = 0
+	bt.walk( (item)-> {
+		sum += item
+	})
+	std.println(["Sum: ", sum])
+	
+	find(bt, 3)
+	find(bt, 10)
+	find(bt, 5)
+	find(bt, 1)
+	find(bt, 8)
+	find(bt, 4)
+}
+
+defn find = ( bt, value ) -> {
+	var result = bt.find( value )
+	std.println(["Looking for ", value, " Found: ", result ? "yes" | "no"])
+}

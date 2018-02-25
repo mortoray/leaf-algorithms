@@ -1,0 +1,18 @@
+defn to_array = ( items : tuple ) -> {
+	var arr := array｢integer｣(items.size)
+	var i = 0
+	foreach( items, (item) -> {
+		arr#i = item
+		i += 1
+	})
+	return arr
+}
+
+//TODO: why is array｢any｣ causing incomplete-typing
+defn print = ( items : shared array｢integer｣ ) -> {
+	for i in std.range(0,items.size) {
+		i > 0 then std.print(',')
+		std.print( items#i )
+	}
+	std.println([])
+}
