@@ -1,0 +1,88 @@
+literal SDL_INIT_VIDEO =  0x0000_0020
+
+@import( "SDL_Init" ) multi sdl_init : ( flags : binary 32bit ) ->  ( : abi_int ) raw no_throw
+
+typedef SDL_Window : abi_pack [
+] 
+
+literal SDL_WINDOW_SHOWN = 0x0000_0004
+
+@import( "SDL_CreateWindow" ) multi sdl_create_window : ( title : raw_array｢abi_char｣,
+	x : abi_int, y : abi_int, w : abi_int, h : abi_int, flags : binary 32bit ) -> ( : SDL_Window value_ptr ) raw no_throw
+	
+typedef SDL_Surface : abi_pack [
+	_flags : binary 32bit,
+	format : SDL_PixelFormat value_ptr,
+	w : abi_int,
+	h : abi_int,
+	pixels : abi_ptr,
+	userdata : abi_ptr,
+	_locked : abi_int,
+	_lock_data : abi_ptr,
+	//more
+]
+
+@import( "SDL_GetWindowSurface" ) multi sdl_get_window_surface : ( window : SDL_Window value_ptr ) -> ( : SDL_Surface value_ptr ) raw no_throw
+
+	
+@import( "SDL_FillRect" ) multi sdl_fill_rect : ( surface : SDL_Surface value_ptr, rect : abi_ptr, color : binary 32bit ) -> ( : abi_int ) raw no_throw
+
+typedef SDL_PixelFormat : abi_pack [
+]
+@import( "SDL_MapRGB" ) multi sdl_map_rgb : ( format : SDL_PixelFormat value_ptr, r : octet, b : octet, c : octet ) -> ( : binary 32bit ) raw no_throw
+
+@import( "SDL_Delay" ) multi sdl_delay : ( ms : binary 32bit ) -> () raw no_throw
+
+@import( "SDL_UpdateWindowSurface" ) multi sdl_update_window_surface : ( window : SDL_Window value_ptr ) -> ( : abi_int ) raw no_throw
+
+@import( "SDL_DestroyWindow" ) multi sdl_destroy_window : ( window : SDL_Window value_ptr ) -> ( ) raw no_throw
+
+@import( "SDL_Quit" ) multi sdl_quit : ( ) -> ( ) raw no_throw
+
+typedef SDL_RWops : abi_pack [
+]
+//TODO: value_ref giving bad error
+@import( "SDL_LoadBMP_RW" ) multi sdl_load_bmp_rw : ( src : SDL_RWops value_ptr, freesrc : abi_int ) -> ( : SDL_Surface value_ptr ) raw no_throw
+
+@import( "SDL_FreeSurface" ) multi sdl_free_surface : ( surface : SDL_Surface value_ptr ) -> () raw no_throw
+
+@import( "SDL_UpperBlit" ) multi sdl_blit_surface : (  src : SDL_Surface value_ptr, srcrect : abi_ptr,
+	dst : SDL_Surface value_ptr, dstrect : abi_ptr ) -> ( : abi_int) raw no_throw
+
+@import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣, 
+	mode : raw_array｢abi_char｣ ) -> ( : SDL_RWops value_ptr ) raw no_throw
+
+/*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ ) -> ( : SDL_Surface value_ptr ) { 
+	var f = sdl_rw_from_file(file, std.u8_encode("rb"))
+	var q = sdl_load_bmp_rw( f, 1)
+	return q
+}*/
+
+import std;
+
+var main = -> {
+	var q = sdl_init( SDL_INIT_VIDEO )
+	std.println([ "sdl_init: ", q])
+	
+	var window = sdl_create_window( std.u8_encode("Leaf SDL Window"),  0, 0, 400, 300, SDL_WINDOW_SHOWN )
+	//TODO: null check!? std.println([ "window: ", window])
+	
+	var surface = sdl_get_window_surface( window )
+	//TODO: null check!? std.println([ "surface: ", surface])
+	std.println(["surface ", surface.w, "x", surface.h])
+	
+	ignore sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
+	ignore sdl_update_window_surface( window )
+
+	var f = sdl_rw_from_file( std.u8_encode("/src/leaf-algorithms/sdl/demo/logo.bmp"), std.u8_encode("rb") )
+	var image = sdl_load_bmp_rw( f, 1 )
+// 	var image = sdl_load_bmp( std.u8_encode("logo.bmp") )
+ 	ignore sdl_blit_surface( image, 0, surface, 0 )
+ 	ignore sdl_update_window_surface( window )
+ 	
+ 	sdl_delay( 20000 )
+ 	
+ 	sdl_free_surface( image )
+ 	sdl_destroy_window( window )
+ 	sdl_quit()
+}
