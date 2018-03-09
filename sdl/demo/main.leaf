@@ -52,6 +52,8 @@ typedef SDL_RWops : abi_pack [
 @import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣, 
 	mode : raw_array｢abi_char｣ ) -> ( : SDL_RWops value_ptr ) raw no_throw
 
+@import( "SDL_GetError" ) multi sdl_get_error : () -> ( : raw_array｢abi_char｣ ) raw no_throw
+
 /*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ ) -> ( : SDL_Surface value_ptr ) { 
 	var f = sdl_rw_from_file(file, std.u8_encode("rb"))
 	var q = sdl_load_bmp_rw( f, 1)
@@ -60,27 +62,70 @@ typedef SDL_RWops : abi_pack [
 
 import std;
 
+defn print_sdl_error = -> {
+	var sx = sdl_get_error()
+	var i = 0
+	while sx#i != 0 {
+		std.print( char_val(sx#i) )
+		i += 1
+	}
+	std.println([])
+}
+
+defn check_sdl = ( where : array｢char｣, code : abi_int ) -> {
+	code == 0 then return
+	std.println([where, " failed with ", code])
+	print_sdl_error()
+	fail string_tag( "sdl-fail" )
+}
+
+defn check_sdl_ptr = ( where : array｢char｣, item : abi_ptr ) -> {
+	item != 0 then return
+	std.println([where, " failed"])
+	print_sdl_error()
+	fail string_tag( "sdl-fail" )
+}
+
 var main = -> {
+	do {
+		run()
+	} on fail {
+		std.print( current_fail )
+	}
+}
+
+var run = -> {
+		
 	var q = sdl_init( SDL_INIT_VIDEO )
-	std.println([ "sdl_init: ", q])
+	check_sdl( "sdl_init", q )
 	
 	var window = sdl_create_window( std.u8_encode("Leaf SDL Window"),  0, 0, 400, 300, SDL_WINDOW_SHOWN )
-	//TODO: null check!? std.println([ "window: ", window])
+	check_sdl_ptr( "window", as_abi_ptr(window) )
 	
 	var surface = sdl_get_window_surface( window )
-	//TODO: null check!? std.println([ "surface: ", surface])
+	check_sdl_ptr( "surface", as_abi_ptr(surface) )
 	std.println(["surface ", surface.w, "x", surface.h])
 	
-	ignore sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
-	ignore sdl_update_window_surface( window )
+	q = sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
+	check_sdl( "sdl_fill_rect", q )
+	
+	q = sdl_update_window_surface( window )
+	check_sdl( "sql_update_window_surface", q )
 
 	var f = sdl_rw_from_file( std.u8_encode("/src/leaf-algorithms/sdl/demo/logo.bmp"), std.u8_encode("rb") )
+	check_sdl_ptr( "sdl_rw_from_file", as_abi_ptr(f) )
+	
 	var image = sdl_load_bmp_rw( f, 1 )
-// 	var image = sdl_load_bmp( std.u8_encode("logo.bmp") )
- 	ignore sdl_blit_surface( image, 0, surface, 0 )
- 	ignore sdl_update_window_surface( window )
+	check_sdl_ptr( "sdl_load_bmp_rw", as_abi_ptr(image) )
+	std.println(["image ", image.w, "x", image.h])
+
+ 	q = sdl_blit_surface( image, 0, surface, 0 )
+ 	check_sdl( "sdl_blit_surface", q )
  	
- 	sdl_delay( 20000 )
+ 	q = sdl_update_window_surface( window )
+ 	check_sdl( "sdl_update_window_surface", q )
+ 	
+ 	sdl_delay( 1000 )
  	
  	sdl_free_surface( image )
  	sdl_destroy_window( window )
