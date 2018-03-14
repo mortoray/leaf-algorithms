@@ -60,6 +60,18 @@ typedef SDL_RWops : abi_pack [
 	return q
 }*/
 
+// there's no way to do a union yet, so just make this big enough to store all
+typedef SDL_Event : abi_pack [
+	type_ : binary 32bit,
+	//no way to do static arrays either, so just repeat a large field to get 52 bytes
+	pad0 : binary 416bit,
+]
+literal SDL_QUIT = 0x100
+
+//TODO: accidental abi_intr caused unresolved-typing
+@import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw
+
+
 import std;
 
 defn print_sdl_error = -> {
@@ -151,14 +163,24 @@ var run = -> {
 
  	//q = sdl_blit_surface( image, 0, surface, 0 )
  	//check_sdl( "sdl_blit_surface", q )
- 	for i in std.range(0,100) {
+ 	var i = 0
+ 	var run = true
+	while run {
+		var e : SDL_Event
+		while sdl_poll_event(e) != 0 {
+			var q = sdl_poll_event(e)
+			e.type_ == SDL_QUIT then  {
+				run = false
+			}
+		}
+		
 		q = sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
 		check_sdl( "sdl_fill_rect", q )
 		
 		sdl_blit( image, surface, [x=lossy(i),y=lossy(i),w=100,h=100] )
 		q = sdl_update_window_surface( window )
 		check_sdl( "sdl_update_window_surface", q )
-		sdl_delay(64)
+		i = mod(i+1, 200)
 	}
  	
  	q = sdl_update_window_surface( window )
