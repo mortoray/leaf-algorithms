@@ -94,6 +94,36 @@ var main = -> {
 	}
 }
 
+typedef SDL_Rect : abi_pack [
+	x : abi_int,
+	y : abi_int,
+	w : abi_int,
+	h : abi_int,
+] 
+
+defn sdl_blit = (  from : SDL_Surface value_ptr, to : SDL_Surface value_ptr, 
+	dstrect : SDL_Rect optional, srcrect : SDL_Rect optional ) -> {
+	
+	var src_t : SDL_Rect
+	var src : abi_ptr = 0
+	has(srcrect) then {
+		src_t = getopt(srcrect)
+		var src_ptr : value_ptr = src_t
+		src = as_abi_ptr(src_ptr)
+	}
+	
+	var dst_t : SDL_Rect
+	var dst : abi_ptr = 0
+	has(dstrect) then {
+		dst_t = getopt(dstrect)
+		var dst_ptr : value_ptr = dst_t
+		dst = as_abi_ptr(dst_ptr)
+	}
+	
+	var q = sdl_blit_surface(  from, src, to, dst )
+	check_sdl( "sdl_blit_surface", q )
+}
+
 var run = -> {
 		
 	var q = sdl_init( SDL_INIT_VIDEO )
@@ -119,13 +149,22 @@ var run = -> {
 	check_sdl_ptr( "sdl_load_bmp_rw", as_abi_ptr(image) )
 	std.println(["image ", image.w, "x", image.h])
 
- 	q = sdl_blit_surface( image, 0, surface, 0 )
- 	check_sdl( "sdl_blit_surface", q )
+ 	//q = sdl_blit_surface( image, 0, surface, 0 )
+ 	//check_sdl( "sdl_blit_surface", q )
+ 	for i in std.range(0,100) {
+		q = sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
+		check_sdl( "sdl_fill_rect", q )
+		
+		sdl_blit( image, surface, [x=lossy(i),y=lossy(i),w=100,h=100] )
+		q = sdl_update_window_surface( window )
+		check_sdl( "sdl_update_window_surface", q )
+		sdl_delay(64)
+	}
  	
  	q = sdl_update_window_surface( window )
  	check_sdl( "sdl_update_window_surface", q )
  	
- 	sdl_delay( 1000 )
+ 	//sdl_delay( 1000 )
  	
  	sdl_free_surface( image )
  	sdl_destroy_window( window )
