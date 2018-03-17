@@ -1,103 +1,3 @@
-literal SDL_INIT_VIDEO =  0x0000_0020
-
-@import( "SDL_Init" ) multi sdl_init : ( flags : binary 32bit ) ->  ( : abi_int ) raw no_throw
-
-typedef SDL_Window : abi_pack [
-] 
-
-literal SDL_WINDOW_SHOWN = 0x0000_0004
-
-@import( "SDL_CreateWindow" ) multi sdl_create_window : ( title : raw_array｢abi_char｣,
-	x : abi_int, y : abi_int, w : abi_int, h : abi_int, flags : binary 32bit ) -> ( : SDL_Window value_ptr ) raw no_throw
-	
-typedef SDL_Surface : abi_pack [
-	_flags : binary 32bit,
-	format : SDL_PixelFormat value_ptr,
-	w : abi_int,
-	h : abi_int,
-	pixels : abi_ptr,
-	userdata : abi_ptr,
-	_locked : abi_int,
-	_lock_data : abi_ptr,
-	//more
-]
-
-@import( "SDL_GetWindowSurface" ) multi sdl_get_window_surface : ( window : SDL_Window value_ptr ) -> ( : SDL_Surface value_ptr ) raw no_throw
-
-	
-@import( "SDL_FillRect" ) multi sdl_fill_rect : ( surface : SDL_Surface value_ptr, rect : abi_ptr, color : binary 32bit ) -> ( : abi_int ) raw no_throw
-
-typedef SDL_PixelFormat : abi_pack [
-]
-@import( "SDL_MapRGB" ) multi sdl_map_rgb : ( format : SDL_PixelFormat value_ptr, r : octet, b : octet, c : octet ) -> ( : binary 32bit ) raw no_throw
-
-@import( "SDL_Delay" ) multi sdl_delay : ( ms : binary 32bit ) -> () raw no_throw
-
-@import( "SDL_UpdateWindowSurface" ) multi sdl_update_window_surface : ( window : SDL_Window value_ptr ) -> ( : abi_int ) raw no_throw
-
-@import( "SDL_DestroyWindow" ) multi sdl_destroy_window : ( window : SDL_Window value_ptr ) -> ( ) raw no_throw
-
-@import( "SDL_Quit" ) multi sdl_quit : ( ) -> ( ) raw no_throw
-
-typedef SDL_RWops : abi_pack [
-]
-//TODO: value_ref giving bad error
-@import( "SDL_LoadBMP_RW" ) multi sdl_load_bmp_rw : ( src : SDL_RWops value_ptr, freesrc : abi_int ) -> ( : SDL_Surface value_ptr ) raw no_throw
-
-@import( "SDL_FreeSurface" ) multi sdl_free_surface : ( surface : SDL_Surface value_ptr ) -> () raw no_throw
-
-@import( "SDL_UpperBlit" ) multi sdl_blit_surface : (  src : SDL_Surface value_ptr, srcrect : abi_ptr,
-	dst : SDL_Surface value_ptr, dstrect : abi_ptr ) -> ( : abi_int) raw no_throw
-
-@import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣, 
-	mode : raw_array｢abi_char｣ ) -> ( : SDL_RWops value_ptr ) raw no_throw
-
-@import( "SDL_GetError" ) multi sdl_get_error : () -> ( : raw_array｢abi_char｣ ) raw no_throw
-
-/*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ ) -> ( : SDL_Surface value_ptr ) { 
-	var f = sdl_rw_from_file(file, std.u8_encode("rb"))
-	var q = sdl_load_bmp_rw( f, 1)
-	return q
-}*/
-
-// there's no way to do a union yet, so just make this big enough to store all
-typedef SDL_Event : abi_pack [
-	type_ : binary 32bit,
-	//no way to do static arrays either, so just repeat a large field to get 52 bytes
-	pad0 : binary 416bit,
-]
-literal SDL_QUIT = 0x100
-
-//TODO: accidental abi_intr caused unresolved-typing
-@import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw
-
-
-import std;
-
-defn print_sdl_error = -> {
-	var sx = sdl_get_error()
-	var i = 0
-	while sx#i != 0 {
-		std.print( char_val(sx#i) )
-		i += 1
-	}
-	std.println([])
-}
-
-defn check_sdl = ( where : array｢char｣, code : abi_int ) -> {
-	code == 0 then return
-	std.println([where, " failed with ", code])
-	print_sdl_error()
-	fail string_tag( "sdl-fail" )
-}
-
-defn check_sdl_ptr = ( where : array｢char｣, item : abi_ptr ) -> {
-	item != 0 then return
-	std.println([where, " failed"])
-	print_sdl_error()
-	fail string_tag( "sdl-fail" )
-}
-
 var main = -> {
 	do {
 		run()
@@ -106,54 +6,10 @@ var main = -> {
 	}
 }
 
-typedef SDL_Rect : abi_pack [
-	x : abi_int,
-	y : abi_int,
-	w : abi_int,
-	h : abi_int,
-] 
-
-defn sdl_blit = (  from : SDL_Surface value_ptr, to : SDL_Surface value_ptr, 
-	dstrect : SDL_Rect optional, srcrect : SDL_Rect optional ) -> {
-	
-	var src_t : SDL_Rect
-	var src : abi_ptr = 0
-	has(srcrect) then {
-		src_t = getopt(srcrect)
-		var src_ptr : value_ptr = src_t
-		src = as_abi_ptr(src_ptr)
-	}
-	
-	var dst_t : SDL_Rect
-	var dst : abi_ptr = 0
-	has(dstrect) then {
-		dst_t = getopt(dstrect)
-		var dst_ptr : value_ptr = dst_t
-		dst = as_abi_ptr(dst_ptr)
-	}
-	
-	var q = sdl_blit_surface(  from, src, to, dst )
-	check_sdl( "sdl_blit_surface", q )
-}
-
 var run = -> {
-		
-	var q = sdl_init( SDL_INIT_VIDEO )
-	check_sdl( "sdl_init", q )
-	
-	var window = sdl_create_window( std.u8_encode("Leaf SDL Window"),  0, 0, 400, 300, SDL_WINDOW_SHOWN )
-	check_sdl_ptr( "window", as_abi_ptr(window) )
-	
-	var surface = sdl_get_window_surface( window )
-	check_sdl_ptr( "surface", as_abi_ptr(surface) )
-	std.println(["surface ", surface.w, "x", surface.h])
-	
-	q = sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
-	check_sdl( "sdl_fill_rect", q )
-	
-	q = sdl_update_window_surface( window )
-	check_sdl( "sql_update_window_surface", q )
 
+	var app = sdl_app_window("Leaf SDL Window", 600, 450 )
+	
 	var f = sdl_rw_from_file( std.u8_encode("/src/leaf-algorithms/sdl/demo/logo.bmp"), std.u8_encode("rb") )
 	check_sdl_ptr( "sdl_rw_from_file", as_abi_ptr(f) )
 	
@@ -161,8 +17,13 @@ var run = -> {
 	check_sdl_ptr( "sdl_load_bmp_rw", as_abi_ptr(image) )
 	std.println(["image ", image.w, "x", image.h])
 
- 	//q = sdl_blit_surface( image, 0, surface, 0 )
- 	//check_sdl( "sdl_blit_surface", q )
+	var image_tex = sdl_create_texture_from_surface( app.renderer, image )
+	check_sdl_ptr( "sdl_create_texture_from_surface", as_abi_ptr(image_tex) )
+ 	sdl_free_surface( image )
+
+	var sz = sdl_get_window_size(app.window)
+	std.println(["Size: ", sz.x, sz.y])
+	
  	var i = 0
  	var run = true
 	while run {
@@ -173,22 +34,23 @@ var run = -> {
 				run = false
 			}
 		}
+
+		var q = sdl_set_render_draw_color( app.renderer, 20, 128, 60, 255 )
+		check_sdl( "render_draw_color", q )
+	
+		q = sdl_render_clear(app.renderer)
+		check_sdl( "render_clear", q )
 		
-		q = sdl_fill_rect( surface, 0, sdl_map_rgb(surface.format, 0, 100, 0) )
-		check_sdl( "sdl_fill_rect", q )
+		//TODO: inline conversion to float?!
+		var scale : float = lossy(i)
+		scale = scale / 100
+		sdl_render_blit( app.renderer, image_tex, [x=lossy(i),y=lossy(i),
+			w=lossy(100*scale),
+			h=lossy(100*scale)] )
 		
-		sdl_blit( image, surface, [x=lossy(i),y=lossy(i),w=100,h=100] )
-		q = sdl_update_window_surface( window )
-		check_sdl( "sdl_update_window_surface", q )
+		sdl_render_present(app.renderer)
 		i = mod(i+1, 200)
 	}
- 	
- 	q = sdl_update_window_surface( window )
- 	check_sdl( "sdl_update_window_surface", q )
- 	
- 	//sdl_delay( 1000 )
- 	
- 	sdl_free_surface( image )
- 	sdl_destroy_window( window )
- 	sdl_quit()
+
+	sdl_destroy_texture( image_tex )
 }

@@ -1,0 +1,24 @@
+service sdl_app_window {
+	var window : SDL_Window value_ptr
+	var renderer : SDL_Renderer value_ptr
+	
+	defn default = ( name : array｢char｣, w : integer, h : integer ) -> construct {
+		var q = sdl_init( SDL_INIT_VIDEO )
+		check_sdl( "sdl_init", q )
+
+		window = sdl_create_window( std.u8_encode(name),  0, 0, lossy(w), lossy(h), 
+			SDL_WINDOW_SHOWN or SDL_WINDOW_RESIZABLE or SDL_WINDOW_OPENGL )
+		check_sdl_ptr( "window", as_abi_ptr(window) )
+	
+		renderer = sdl_create_renderer( window, -1, 
+			SDL_RENDERER_ACCELERATED or SDL_RENDERER_PRESENTVSYNC )
+		check_sdl_ptr( "renderer", as_abi_ptr(renderer) )
+	}
+	
+	defn destroy = -> {
+		std.print( "Destroying SDL" )
+		sdl_destroy_renderer( renderer )
+		sdl_destroy_window( window )
+		sdl_quit()
+	}
+}

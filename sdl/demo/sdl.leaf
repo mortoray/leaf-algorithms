@@ -1,0 +1,197 @@
+literal SDL_INIT_VIDEO =  0x0000_0020
+
+@import( "SDL_Init" ) multi sdl_init : ( flags : binary 32bit ) ->  ( : abi_int ) raw no_throw
+
+typedef SDL_Window : abi_pack [
+] 
+
+literal SDL_WINDOW_SHOWN = 0x0000_0004
+literal SDL_WINDOW_RESIZABLE = 0x0000_0020
+literal SDL_WINDOW_OPENGL = 0x0000_0002
+literal SDL_WINDOWPOS_UNDEFINED = 0x1FFF_0000
+
+@import( "SDL_CreateWindow" ) multi sdl_create_window : ( title : raw_array｢abi_char｣,
+	x : abi_int, y : abi_int, w : abi_int, h : abi_int, flags : binary 32bit ) -> ( : SDL_Window value_ptr ) raw no_throw
+	
+typedef SDL_Surface : abi_pack [
+	_flags : binary 32bit,
+	format : SDL_PixelFormat value_ptr,
+	w : abi_int,
+	h : abi_int,
+	pixels : abi_ptr,
+	userdata : abi_ptr,
+	_locked : abi_int,
+	_lock_data : abi_ptr,
+	//more
+]
+
+@import( "SDL_GetWindowSurface" ) multi sdl_get_window_surface : ( window : SDL_Window value_ptr ) -> ( : SDL_Surface value_ptr ) raw no_throw
+
+	
+@import( "SDL_FillRect" ) multi sdl_fill_rect : ( surface : SDL_Surface value_ptr, rect : abi_ptr, color : binary 32bit ) -> ( : abi_int ) raw no_throw
+
+typedef SDL_PixelFormat : abi_pack [
+]
+@import( "SDL_MapRGB" ) multi sdl_map_rgb : ( format : SDL_PixelFormat value_ptr, r : octet, b : octet, c : octet ) -> ( : binary 32bit ) raw no_throw
+
+@import( "SDL_Delay" ) multi sdl_delay : ( ms : binary 32bit ) -> () raw no_throw
+
+@import( "SDL_UpdateWindowSurface" ) multi sdl_update_window_surface : ( window : SDL_Window value_ptr ) -> ( : abi_int ) raw no_throw
+
+@import( "SDL_DestroyWindow" ) multi sdl_destroy_window : ( window : SDL_Window value_ptr ) -> ( ) raw no_throw
+
+@import( "SDL_Quit" ) multi sdl_quit : ( ) -> ( ) raw no_throw
+
+typedef SDL_RWops : abi_pack [
+]
+//TODO: value_ref giving bad error
+@import( "SDL_LoadBMP_RW" ) multi sdl_load_bmp_rw : ( src : SDL_RWops value_ptr, freesrc : abi_int ) -> ( : SDL_Surface value_ptr ) raw no_throw
+
+@import( "SDL_FreeSurface" ) multi sdl_free_surface : ( surface : SDL_Surface value_ptr ) -> () raw no_throw
+
+@import( "SDL_UpperBlit" ) multi sdl_blit_surface : (  src : SDL_Surface value_ptr, srcrect : abi_ptr,
+	dst : SDL_Surface value_ptr, dstrect : abi_ptr ) -> ( : abi_int) raw no_throw
+
+@import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣, 
+	mode : raw_array｢abi_char｣ ) -> ( : SDL_RWops value_ptr ) raw no_throw
+
+@import( "SDL_GetError" ) multi sdl_get_error : () -> ( : raw_array｢abi_char｣ ) raw no_throw
+
+/*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ ) -> ( : SDL_Surface value_ptr ) { 
+	var f = sdl_rw_from_file(file, std.u8_encode("rb"))
+	var q = sdl_load_bmp_rw( f, 1)
+	return q
+}*/
+
+// there's no way to do a union yet, so just make this big enough to store all
+typedef SDL_Event : abi_pack [
+	type_ : binary 32bit,
+	//no way to do static arrays either, so just repeat a large field to get 52 bytes
+	pad0 : binary 416bit,
+]
+literal SDL_QUIT = 0x100
+
+//TODO: accidental abi_intr caused unresolved-typing
+@import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw
+
+literal SDL_RENDERER_SOFTWARE = 0x00000001
+literal SDL_RENDERER_ACCELERATED = 0x00000002
+literal SDL_RENDERER_PRESENTVSYNC = 0x00000004
+literal SDL_RENDERER_TARGETTEXTURE = 0x00000008
+
+typedef SDL_Renderer : abi_pack [
+]
+@import( "SDL_CreateRenderer" ) multi sdl_create_renderer : ( window : SDL_Window value_ptr,	
+	index : abi_int, flags : binary 32bit ) -> ( : SDL_Renderer value_ptr ) raw no_throw
+@import( "SDL_DestroyRenderer" ) multi sdl_destroy_renderer : ( renderer : SDL_Renderer value_ptr ) -> ( ) raw no_throw
+
+typedef SDL_Texture : abi_pack [
+]
+@import( "SDL_CreateTextureFromSurface" ) multi sdl_create_texture_from_surface : (
+	renderer : SDL_Renderer value_ptr, surface : SDL_Surface value_ptr ) -> ( : SDL_Texture value_ptr ) raw no_throw
+@import( "SDL_DestroyTexture" ) multi sdl_destroy_texture : ( texture : SDL_Texture value_ptr ) -> ( ) raw no_throw
+
+
+@import( "SDL_RenderClear" ) multi sdl_render_clear : ( renderer : SDL_Renderer value_ptr ) -> ( : abi_int ) raw no_throw
+
+@import( "SDL_RenderPresent" ) multi sdl_render_present : ( renderer : SDL_Renderer value_ptr ) -> ( ) raw no_throw
+
+@import( "SDL_RenderCopy" ) multi sdl_render_copy : ( renderer : SDL_Renderer value_ptr,
+	texture : SDL_Texture value_ptr, srcrect : abi_ptr, dstrct : abi_ptr ) -> ( : abi_int ) raw no_throw
+
+@import( "SDL_SetRenderDrawColor" ) multi sdl_set_render_draw_color : (
+	renderer : SDL_Renderer value_ptr,
+	r : binary 8bit,
+	g : binary 8bit,
+	b : binary 8bit,
+	a : binary 8bit ) -> ( :abi_int ) raw no_throw
+
+import std;
+
+defn print_sdl_error = -> {
+	var sx = sdl_get_error()
+	var i = 0
+	while sx#i != 0 {
+		std.print( char_val(sx#i) )
+		i += 1
+	}
+	std.println([])
+}
+
+defn check_sdl = ( where : array｢char｣, code : abi_int ) -> {
+	code == 0 then return
+	std.println([where, " failed with ", code])
+	print_sdl_error()
+	fail string_tag( "sdl-fail" )
+}
+
+defn check_sdl_ptr = ( where : array｢char｣, item : abi_ptr ) -> {
+	item != 0 then return
+	std.println([where, " failed"])
+	print_sdl_error()
+	fail string_tag( "sdl-fail" )
+}
+
+typedef SDL_Rect : abi_pack [
+	x : abi_int,
+	y : abi_int,
+	w : abi_int,
+	h : abi_int,
+] 
+
+defn sdl_blit = (  from : SDL_Surface value_ptr, to : SDL_Surface value_ptr, 
+	dstrect : SDL_Rect optional, srcrect : SDL_Rect optional ) -> {
+	
+	var src_t : SDL_Rect
+	var src : abi_ptr = 0
+	has(srcrect) then {
+		src_t = getopt(srcrect)
+		var src_ptr : value_ptr = src_t
+		src = as_abi_ptr(src_ptr)
+	}
+	
+	var dst_t : SDL_Rect
+	var dst : abi_ptr = 0
+	has(dstrect) then {
+		dst_t = getopt(dstrect)
+		var dst_ptr : value_ptr = dst_t
+		dst = as_abi_ptr(dst_ptr)
+	}
+	
+	var q = sdl_blit_surface(  from, src, to, dst )
+	check_sdl( "sdl_blit_surface", q )
+}
+
+defn sdl_render_blit = (  to : SDL_Renderer value_ptr, from : SDL_Texture value_ptr, 
+	dstrect : SDL_Rect optional, srcrect : SDL_Rect optional ) -> {
+	
+	var src_t : SDL_Rect
+	var src : abi_ptr = 0
+	has(srcrect) then {
+		src_t = getopt(srcrect)
+		var src_ptr : value_ptr = src_t
+		src = as_abi_ptr(src_ptr)
+	}
+	
+	var dst_t : SDL_Rect
+	var dst : abi_ptr = 0
+	has(dstrect) then {
+		dst_t = getopt(dstrect)
+		var dst_ptr : value_ptr = dst_t
+		dst = as_abi_ptr(dst_ptr)
+	}
+	
+	var q = sdl_render_copy( to, from, src, dst )
+	check_sdl( "sdl_render_copy", q )
+}
+
+
+@import( "SDL_GetWindowSize" ) multi sdl_get_window_size_ : (  window : SDL_Window value_ptr,
+	w : abi_int value_ptr, h : abi_int value_ptr ) -> ( ) raw no_throw
+
+defn sdl_get_window_size = ( window : SDL_Window value_ptr ) -> {
+	var w : abi_int
+	var h : abi_int
+	sdl_get_window_size_( window, w, h )
+	return [x=w,y=h]
+}
