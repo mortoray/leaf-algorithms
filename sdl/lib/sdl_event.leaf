@@ -1,0 +1,65 @@
+// there's no way to do a union yet, so just make this big enough to store all
+typedef SDL_Event : abi_pack [
+	type_ : binary 32bit,
+	//no way to do static arrays either, so just repeat a large field to get 52 bytes
+	pad0 : binary 416bit,
+]
+literal SDL_QUIT = 0x100
+literal SDL_KEYDOWN = 0x300
+literal SDL_KEYUP = 0x301
+literal SDL_WINDOWEVENT = 0x200
+
+typedef SDL_KeyboardEvent : abi_pack [
+	type_ : binary 32bit,
+	timestamp : binary 32bit,
+	windowID: binary 32bit,
+	state : binary 8bit,
+	repeat : binary 8bit,
+	keysym : SDL_Keysym,
+]
+
+typedef SDL_Keysym : abi_pack [
+	scancode : abi_int, //SDL_Scancode,  TODO: perhaps an abi_enum to be clearer
+	sym : abi_int, //SDL_Keyboard,
+	mod : binary 16bit,
+	unused : binary 32bit,
+]
+
+
+literal SDLK_UP = 0x40000052
+literal SDLK_DOWN = 0x40000051
+literal SDLK_RIGHT = 0x4000004f
+literal SDLK_LEFT = 0x40000050
+
+//TODO: accidental abi_intr caused unresolved-typing
+@import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw
+
+
+typedef SDL_WindowEvent : abi_pack [
+	type_ : binary 32bit,
+	timestamp : binary 32bit,
+	windowID : binary 32bit,
+	event : binary 8bit,
+	padding1 : binary 8bit,
+	padding2 : binary 8bit,
+	padding3 : binary 8bit,
+	data1 : integer 32bit,
+	data2 : integer 32bit,
+]
+
+//TODO: some kind of enum type?
+literal SDL_WINDOWEVENT_NONE = 0
+literal SDL_WINDOWEVENT_SHOWN = 1
+literal SDL_WINDOWEVENT_HIDDEN = 2
+literal SDL_WINDOWEVENT_EXPOSED = 3
+literal SDL_WINDOWEVENT_MOVED = 4 
+literal SDL_WINDOWEVENT_RESIZED = 5
+literal SDL_WINDOWEVENT_SIZE_CHANGED = 6
+literal SDL_WINDOWEVENT_MINIMIZED = 7
+literal SDL_WINDOWEVENT_MAXIMIZED = 8
+literal SDL_WINDOWEVENT_RESTORED = 9
+literal SDL_WINDOWEVENT_ENTER = 10
+literal SDL_WINDOWEVENT_LEAVE = 11
+literal SDL_WINDOWEVENT_FOCUS_GAINED = 12
+literal SDL_WINDOWEVENT_FOCUS_LOST = 13
+literal SDL_WINDOWEVENT_CLOSE = 14

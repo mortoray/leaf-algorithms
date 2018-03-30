@@ -1,0 +1,25 @@
+service sdl_texture {
+	var size : [ 
+		x : integer,
+		y : integer,
+	]
+	var texture : SDL_Texture value_ptr
+	
+	defn from_file = ( renderer : SDL_Renderer value_ptr, name : array｢char｣ ) -> construct {
+		var f = sdl_rw_from_file( std.u8_encode(name), std.u8_encode("rb") )
+		check_sdl_ptr( "sdl_rw_from_file", as_abi_ptr(f) )
+		
+		var image = sdl_load_bmp_rw( f, 1 )
+		check_sdl_ptr( "sdl_load_bmp_rw", as_abi_ptr(image) )
+		size.x = image.w
+		size.y = image.h
+
+		texture = sdl_create_texture_from_surface( renderer, image )
+		check_sdl_ptr( "sdl_create_texture_from_surface", as_abi_ptr(texture) )
+		sdl_free_surface( image )
+	}
+	
+	defn destroy = -> {
+		sdl_destroy_texture( texture )
+	}
+}

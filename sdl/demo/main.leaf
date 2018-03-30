@@ -1,3 +1,5 @@
+import math
+
 var main = -> {
 	do {
 		run()
@@ -41,15 +43,33 @@ var run = -> {
 		q = sdl_render_clear(app.renderer)
 		check_sdl( "render_clear", q )
 		
+		var sz = sdl_get_window_size(app.window)
+		var rows = sz.y / 50
+		var cols = sz.x / 50
+		var sz_x = lossy(sz.x) / cols
+		var sz_y = lossy(sz.y) / rows
+		
+		for y in std.range(0,rows) {
+			for x in std.range(0,cols) {
+				var ph : float = lossy(i*2 + y*20 + x*20)
+				var sc = (math.sin(ph/55)+1)/2
+				sdl_render_blit( app.renderer, image_tex, [
+					x=lossy( x * sz_x),
+					y=lossy( y*sz_y),
+					w=lossy(sz_x*sc),
+					h=lossy(sz_y*sc)] )
+			}
+		}
+		
 		//TODO: inline conversion to float?!
-		var scale : float = lossy(i)
+		/*var scale : float = lossy(i)
 		scale = scale / 100
 		sdl_render_blit( app.renderer, image_tex, [x=lossy(i),y=lossy(i),
 			w=lossy(100*scale),
-			h=lossy(100*scale)] )
+			h=lossy(100*scale)] )*/
 		
 		sdl_render_present(app.renderer)
-		i = mod(i+1, 200)
+		i += 1
 	}
 
 	sdl_destroy_texture( image_tex )

@@ -1,0 +1,88 @@
+import math
+
+var main = -> {
+	do {
+		run()
+	} on fail {
+		std.print( current_fail )
+	}
+}
+
+service game_state {
+	var pos : [ x : integer, y : integer ]
+	var board_size : [ x : integer, y : integer ]
+	
+	defn move = ( x : integer,  y : integer ) -> {
+		pos.x = mod( pos.x + x, board_size.x )
+		pos.y = mod( pos.y + y, board_size.y )
+	}
+	
+	defn default = ( board_size : [ x : integer, y : integer ] )-> construct {
+		pos.x = 10
+		pos.y = 5
+		this.board_size = board_size
+	}
+	
+	defn change_board_size = ( x : integer, y : integer ) -> {
+		board_size.x = x
+		board_size.y = y
+		move(0,0)
+	}
+}
+
+var run = -> {
+
+	var app = sdl_app_window("Leaf SDL Window", 600, 450 )
+	
+	var logo_tex = sdl_texture.from_file(app.renderer, "/src/leaf-algorithms/sdl/demo/logo.bmp")
+	
+	var window_sz = sdl_get_window_size(app.window)
+	
+	var state = game_state([window_sz.x/50, window_sz.y/50])
+	
+ 	var run = true
+	while run {
+		var e : SDL_Event
+		while sdl_poll_event(e) != 0 {
+			var q = sdl_poll_event(e)
+			e.type_ == SDL_QUIT then  {
+				run = false
+			}
+			e.type_ == SDL_KEYDOWN then {
+				var key_ev = cast_ptr｢SDL_KeyboardEvent value_ptr｣(e)
+				//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
+				key_ev.keysym.sym == SDLK_UP then { state.move(0,-1) }
+				key_ev.keysym.sym == SDLK_DOWN then { state.move(0,1) }
+				key_ev.keysym.sym == SDLK_LEFT then { state.move(-1,0) }
+				key_ev.keysym.sym == SDLK_RIGHT then { state.move(1,0) }
+			}
+			e.type_ == SDL_WINDOWEVENT then {
+				var win_ev = cast_ptr｢SDL_WindowEvent value_ptr｣(e)
+				win_ev.event == SDL_WINDOWEVENT_SIZE_CHANGED then {
+					window_sz = sdl_get_window_size(app.window)
+					state.change_board_size( window_sz.x/50, window_sz.y/50 )
+				}
+			}
+		}
+
+		var q = sdl_set_render_draw_color( app.renderer, 20, 128, 60, 255 )
+		check_sdl( "render_draw_color", q )
+	
+		q = sdl_render_clear(app.renderer)
+		check_sdl( "render_clear", q )
+		
+		var sz_x = window_sz.x / state.board_size.x
+		var sz_y = window_sz.y / state.board_size.y
+		
+		sdl_render_blit( app.renderer, logo_tex.texture, [
+			x= lossy(state.pos.x * sz_x),
+			y= lossy(state.pos.y*sz_y),
+			w= lossy(sz_x),
+			h= lossy(sz_y)
+		])
+		
+		
+		sdl_render_present(app.renderer)
+	}
+
+}

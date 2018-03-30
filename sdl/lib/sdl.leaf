@@ -63,16 +63,6 @@ typedef SDL_RWops : abi_pack [
 	return q
 }*/
 
-// there's no way to do a union yet, so just make this big enough to store all
-typedef SDL_Event : abi_pack [
-	type_ : binary 32bit,
-	//no way to do static arrays either, so just repeat a large field to get 52 bytes
-	pad0 : binary 416bit,
-]
-literal SDL_QUIT = 0x100
-
-//TODO: accidental abi_intr caused unresolved-typing
-@import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw
 
 literal SDL_RENDERER_SOFTWARE = 0x00000001
 literal SDL_RENDERER_ACCELERATED = 0x00000002
@@ -182,7 +172,7 @@ defn sdl_render_blit = (  to : SDL_Renderer value_ptr, from : SDL_Texture value_
 	}
 	
 	var q = sdl_render_copy( to, from, src, dst )
-	check_sdl( "sdl_render_copy", q )
+	//check_sdl( "sdl_render_copy", q )
 }
 
 
