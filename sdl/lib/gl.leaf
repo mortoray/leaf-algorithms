@@ -1,0 +1,10 @@
+alias GLfloat : abi_float
+alias GLbitfield : abi_int
+
+@import( "glClearColor" ) multi gl_clear_color : ( r : GLfloat, g : GLfloat, b : GLfloat, a : GLfloat ) -> ( ) raw no_throw
+
+literal GL_COLOR_BUFFER_BIT	 = 0x00004000
+literal GL_DEPTH_BUFFER_BIT = 0x00000100
+literal GL_STENCIL_BUFFER_BIT = 0x00000400
+
+@import( "glClear" ) multi gl_clear : ( mask : GLbitfield ) -> ( ) raw no_throw

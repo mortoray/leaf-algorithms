@@ -1,0 +1,7 @@
+@import( "SDL_GL_CreateContext" ) multi sdl_gl_create_context : ( window : SDL_Window value_ptr ) ->  ( : SDL_GLContext value_ptr ) raw no_throw
+
+typedef SDL_GLContext : abi_pack [
+] 
+
+
+@import( "SDL_GL_SwapWindow" ) multi sdl_gl_swap_window : ( window : SDL_Window value_ptr ) -> ( ) raw no_throw
