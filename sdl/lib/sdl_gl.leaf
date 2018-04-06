@@ -1,7 +1,37 @@
 @import( "SDL_GL_CreateContext" ) multi sdl_gl_create_context : ( window : SDL_Window value_ptr ) ->  ( : SDL_GLContext value_ptr ) raw no_throw
-
+@import( "SDL_GL_DeleteContext" ) multi sdl_gl_delete_context : ( context : SDL_GLContext value_ptr ) -> ( ) raw no_throw
 typedef SDL_GLContext : abi_pack [
 ] 
 
 
 @import( "SDL_GL_SwapWindow" ) multi sdl_gl_swap_window : ( window : SDL_Window value_ptr ) -> ( ) raw no_throw
+@import( "SDL_GL_SetSwapInterval" ) multi sdl_gl_set_swap_interval : ( interval : abi_int ) -> ( :abi_int ) raw no_throw
+
+@import( "SDL_GL_SetAttribute" ) multi sdl_gl_set_attribute : ( attr : abi_int, value : abi_int ) -> ( : abi_int) raw no_throw
+
+//TODO: enum
+literal SDL_GL_RED_SIZE = 0
+literal SDL_GL_GREEN_SIZE = 1
+literal SDL_GL_BLUE_SIZE = 2
+literal SDL_GL_ALPHA_SIZE = 3
+literal SDL_GL_BUFFER_SIZE = 4 
+literal SDL_GL_DOUBLEBUFFER = 5
+literal SDL_GL_DEPTH_SIZE = 6
+literal SDL_GL_STENCIL_SIZE = 7
+literal SDL_GL_ACCUM_RED_SIZE = 8
+literal SDL_GL_ACCUM_GREEN_SIZE = 9
+literal SDL_GL_ACCUM_BLUE_SIZE = 10
+literal SDL_GL_ACCUM_ALPHA_SIZE = 11
+literal SDL_GL_STEREO = 12
+literal SDL_GL_MULTISAMPLEBUFFERS = 13
+literal SDL_GL_MULTISAMPLESAMPLES = 14
+literal SDL_GL_ACCELERATED_VISUAL = 15
+literal SDL_GL_RETAINED_BACKING = 16
+literal SDL_GL_CONTEXT_MAJOR_VERSION = 17
+literal SDL_GL_CONTEXT_MINOR_VERSION = 18
+literal SDL_GL_CONTEXT_EGL = 19
+literal SDL_GL_CONTEXT_FLAGS = 20
+literal SDL_GL_CONTEXT_PROFILE_MASK = 21
+literal SDL_GL_SHARE_WITH_CURRENT_CONTEXT = 22
+literal SDL_GL_FRAMEBUFFER_SRGB_CAPABLE = 23
+literal SDL_GL_CONTEXT_RELEASE_BEHAVIO = 24

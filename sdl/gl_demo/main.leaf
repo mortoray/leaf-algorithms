@@ -8,6 +8,12 @@ var main = -> {
 
 var run = -> {
 
+	ignore sdl_gl_set_attribute( SDL_GL_RED_SIZE, 8 )
+	ignore sdl_gl_set_attribute( SDL_GL_GREEN_SIZE, 8 )
+	ignore sdl_gl_set_attribute( SDL_GL_BLUE_SIZE, 8 )
+	ignore sdl_gl_set_attribute( SDL_GL_DEPTH_SIZE, 16 )
+	ignore sdl_gl_set_attribute( SDL_GL_DOUBLEBUFFER, 1 )
+	
 	var app = sdl_app_window("Leaf SDL Window", 600, 450 )
 	
 	//var logo_tex = sdl_texture.from_file(app.renderer, "/src/leaf-algorithms/sdl/demo/logo.bmp")
@@ -15,6 +21,65 @@ var run = -> {
 	var gl_ctx = sdl_gl_create_context( app.window )
 	check_sdl_ptr( "gl_create_context", as_abi_ptr(gl_ctx) )
 
+	ignore sdl_gl_set_swap_interval( 1 )
+	
+	var program = gl_create_program()
+	check_gl_error( "create_program" )
+	
+	var vert_shader = gl_create_shader( GL_VERTEX_SHADER )
+	check_gl_error( "create_shader" )
+	
+	var vert_prog = "	#version 130\nin vec2 LVertexPos2D; 
+	void main() { gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); } "
+	gl_shader_source( vert_shader, vert_prog )
+
+	var frag_shader = gl_create_shader( GL_FRAGMENT_SHADER )
+	check_gl_error( "fragment_shader" )
+	
+	var frag_prog = "#version 130\nout vec4 LFragment; void main() { LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); } "
+	gl_shader_source( frag_shader, frag_prog )
+	
+	gl_attach_shader( program, vert_shader )
+	check_gl_error( "attach_shader" )
+	gl_attach_shader( program, frag_shader )
+	check_gl_error( "attach_shader" )
+	
+	gl_link_program( program )
+	check_gl_error( "link_program" )
+	//TODO: check Programiv LINK_STATUS
+	
+	var vpos = gl_get_attrib_location( program, std.u8_encode("LVertexPos2D").raw_ptr )
+	check_gl_error( "get_attrib" )
+	vpos == -1 then {
+		fail string_tag( "get_attrib" )
+	}
+	
+	var vertexData = array｢GLfloat｣(8)
+	vertexData#0 = -0.5
+	vertexData#1 = -0.5
+	vertexData#2 = 0.5
+	vertexData#3 = -0.5
+	vertexData#4 = 0.5
+	vertexData#5 = 0.5
+	vertexData#6 = -0.5
+	vertexData#7 = 0.5
+	
+	var indexData = array｢GLuint｣(4)
+	indexData#0 = 0
+	indexData#1 = 1
+	indexData#2 = 2
+	indexData#3 = 3
+	
+	var buffers = array｢GLuint｣(2)
+	gl_gen_buffers( 2, buffers.raw_ptr )
+	gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
+	gl_buffer_data( GL_ARRAY_BUFFER, 2 * 4 * /*sizeof(GLfloat)*/ 4, 
+		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(vertexData.raw_ptr), GL_STATIC_DRAW )
+		
+	gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
+	gl_buffer_data( GL_ELEMENT_ARRAY_BUFFER, 4 * 4 /*sizeof(GLuint)*/, 
+		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(indexData.raw_ptr), GL_STATIC_DRAW )
+	
 	gl_clear_color(0,0.5,0.5,1)
 	
  	var run = true
@@ -25,10 +90,32 @@ var run = -> {
 			e.type_ == SDL_QUIT then  {
 				run = false
 			}
+			e.type_ == SDL_WINDOWEVENT then {
+				var win_ev = cast_ptr｢SDL_WindowEvent value_ptr｣(e)
+				win_ev.event == SDL_WINDOWEVENT_SIZE_CHANGED then {
+					var window_sz = sdl_get_window_size(app.window)
+					gl_viewport( 0, 0, window_sz.x, window_sz.y )
+				}
+			}
 		}
 
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
+		gl_use_program( program )
+		check_gl_error( "use_program" )
+		
+		gl_enable_vertex_attrib_array( vpos );
+		check_gl_error( "vertex_attrib" )
+		
+		gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
+		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * 4/*sizeof(GLFloat)*/, 0 )
+		check_gl_error( "attrib_pointer" )
+		
+		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
+		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
+		
+		gl_disable_vertex_attrib_array( vpos );
 		sdl_gl_swap_window( app.window )
 	}
 
+	sdl_gl_delete_context( gl_ctx )
 }

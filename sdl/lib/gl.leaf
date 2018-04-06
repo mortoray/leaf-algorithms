@@ -1,5 +1,14 @@
 alias GLfloat : abi_float
 alias GLbitfield : abi_int
+alias GLenum : abi_uint
+alias GLuint : abi_uint
+alias GLsizei : abi_int
+alias GLint : abi_int
+alias GLsizeiptr : abi_ptr
+alias GLboolean : abi_char
+
+literal GL_TRUE = 1
+literal GL_FALSE = 0
 
 @import( "glClearColor" ) multi gl_clear_color : ( r : GLfloat, g : GLfloat, b : GLfloat, a : GLfloat ) -> ( ) raw no_throw
 
@@ -8,3 +17,103 @@ literal GL_DEPTH_BUFFER_BIT = 0x00000100
 literal GL_STENCIL_BUFFER_BIT = 0x00000400
 
 @import( "glClear" ) multi gl_clear : ( mask : GLbitfield ) -> ( ) raw no_throw
+
+
+@import( "glCreateShader" ) multi gl_create_shader : ( shader_type : GLenum ) -> ( : GLuint ) raw no_throw
+@import( "glCreateProgram" ) multi gl_create_program : ( ) -> ( : GLuint ) raw no_throw
+@import( "glLinkProgram" ) multi gl_link_program : ( program : GLuint ) -> ( ) raw no_throw
+
+literal GL_TRIANGLE_FAN = 0x0006
+
+literal GL_FLOAT = 0x1406
+literal GL_UNSIGNED_INT = 0x1405
+
+literal GL_ARRAY_BUFFER =  0x8892
+literal GL_ELEMENT_ARRAY_BUFFER = 0x8893
+literal GL_STATIC_DRAW = 0x88E4
+literal GL_FRAGMENT_SHADER = 0x8B30
+literal GL_VERTEX_SHADER = 0x8B31
+literal GL_COMPILE_STATUS = 0x8B81
+literal GL_INFO_LOG_LENGTH = 0x8B84
+
+@import( "glGetError" ) multi gl_get_error : ( ) -> ( : GLuint )  raw no_throw
+
+defn check_gl_error = ( where : array｢char｣ ) -> {
+	var code = gl_get_error()
+	code == 0 then return
+	std.println([where, " failed with ", code])
+	fail string_tag( "gl-fail" )
+}
+
+
+typedef raw_string : abi_pack [
+	text : raw_array｢abi_char｣ value_ptr
+]
+
+@import( "glShaderSource" ) multi gl_shader_source_impl : ( shader : GLuint, count : GLsizei, 
+	strings : raw_array｢abi_ptr｣ value_ptr, length : raw_array｢GLint｣ value_ptr ) -> ( ) raw no_throw
+@import( "glCompileShader" ) multi gl_compile_shader : ( shader : GLuint ) -> ( ) raw no_throw
+
+defn gl_shader_source = ( shader : GLuint, data : array｢char｣ ) -> {
+	var q = std.u8_encode(data)
+	var arr = array｢abi_ptr｣(1)
+	arr#0 = as_abi_ptr(q.raw_ptr)
+	
+	var len = array｢GLint｣(1)
+	len#0 = lossy(q.size)
+	gl_shader_source_impl( shader, 1, arr.raw_ptr, len.raw_ptr )
+	check_gl_error("shader_source")
+	
+	gl_compile_shader( shader )
+	check_gl_error("compile_shader" )
+	
+ 	var comp : GLint = 0
+ 	gl_get_shader_iv( shader, GL_COMPILE_STATUS, comp )
+	comp == GL_FALSE then {
+		std.print(gl_get_shader_log(shader))
+		fail string_tag( "uncompiled-shader" )
+	}
+}
+
+@import( "glGetShaderiv" ) multi gl_get_shader_iv : ( shader : GLuint, pname : GLenum, params : GLint value_ptr ) -> ( ) raw no_throw
+
+
+@import( "glAttachShader" ) multi gl_attach_shader : ( program : GLuint, shader: GLuint ) -> () raw no_throw
+
+@import( "glGetAttribLocation" ) multi gl_get_attrib_location : ( program : GLuint, name : raw_array｢abi_char｣ value_ptr ) -> ( : GLint) raw no_throw
+
+@import( "glGenBuffers" ) multi gl_gen_buffers : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+
+@import( "glBindBuffer" ) multi gl_bind_buffer : ( target : GLenum, buffer : GLuint ) -> ( ) raw no_throw
+
+@import( "glBufferData" ) multi gl_buffer_data : ( target : GLenum, size : GLsizeiptr, 
+	data : raw_array｢abi_char｣ value_ptr, usage : GLenum) -> () raw no_throw
+
+	
+@import( "glGetShaderInfoLog" ) multi gl_get_shader_info_log_impl : ( shader : GLuint,
+	maxLength : GLsizei, length : GLsizei value_ptr, infoLog : raw_array｢abi_char｣ value_ptr) -> () raw no_throw
+
+
+defn gl_get_shader_log = ( shader : GLuint ) -> ( : array｢char｣ ) {
+	var len : GLint
+	gl_get_shader_iv( shader, GL_INFO_LOG_LENGTH, len )
+	var data = array｢abi_char｣(len)
+	var olen : GLsizei
+	gl_get_shader_info_log_impl( shader, len, olen, data.raw_ptr )
+	return std.u8_decode( data, len )
+}
+
+@import( "glUseProgram" ) multi gl_use_program : ( program : GLuint ) -> () raw no_throw
+
+@import( "glVertexAttribPointer" ) multi gl_vertex_attrib_pointer : ( index : GLuint,
+  	size : GLint, type_ : 	GLenum, normalized : GLboolean, stride : 	GLsizei,
+  	pointer : abi_ptr ) -> () raw no_throw
+  
+@import( "glDrawElements" ) multi gl_draw_elements : ( mode : GLenum,
+	count : GLsizei, type_ : GLenum, indices : abi_ptr ) -> () raw no_throw
+
+@import( "glEnableVertexAttribArray" ) multi gl_enable_vertex_attrib_array : ( index : GLuint ) -> () raw no_throw
+@import( "glDisableVertexAttribArray" ) multi gl_disable_vertex_attrib_array : ( index : GLuint ) -> () raw no_throw
+ 
+
+@import( "glViewport" ) multi gl_viewport : ( x : GLint, y : GLint, width : GLsizei, height : GLsizei) -> () raw no_throw

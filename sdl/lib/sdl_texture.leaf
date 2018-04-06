@@ -6,7 +6,7 @@ service sdl_texture {
 	var texture : SDL_Texture value_ptr
 	
 	defn from_file = ( renderer : SDL_Renderer value_ptr, name : array｢char｣ ) -> construct {
-		var f = sdl_rw_from_file( std.u8_encode(name), std.u8_encode("rb") )
+		var f = sdl_rw_from_file( std.u8_encode(name).raw_ptr, std.u8_encode("rb").raw_ptr )
 		check_sdl_ptr( "sdl_rw_from_file", as_abi_ptr(f) )
 		
 		var image = sdl_load_bmp_rw( f, 1 )

@@ -6,7 +6,7 @@ service sdl_app_window {
 		var q = sdl_init( SDL_INIT_VIDEO )
 		check_sdl( "sdl_init", q )
 
-		window = sdl_create_window( std.u8_encode(name),  0, 0, lossy(w), lossy(h), 
+		window = sdl_create_window( std.u8_encode(name).raw_ptr,  0, 0, lossy(w), lossy(h), 
 			SDL_WINDOW_SHOWN or SDL_WINDOW_RESIZABLE or SDL_WINDOW_OPENGL )
 		check_sdl_ptr( "window", as_abi_ptr(window) )
 	

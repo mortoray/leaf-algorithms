@@ -10,7 +10,7 @@ literal SDL_WINDOW_RESIZABLE = 0x0000_0020
 literal SDL_WINDOW_OPENGL = 0x0000_0002
 literal SDL_WINDOWPOS_UNDEFINED = 0x1FFF_0000
 
-@import( "SDL_CreateWindow" ) multi sdl_create_window : ( title : raw_array｢abi_char｣,
+@import( "SDL_CreateWindow" ) multi sdl_create_window : ( title : raw_array｢abi_char｣ value_ptr,
 	x : abi_int, y : abi_int, w : abi_int, h : abi_int, flags : binary 32bit ) -> ( : SDL_Window value_ptr ) raw no_throw
 	
 typedef SDL_Surface : abi_pack [
@@ -52,12 +52,12 @@ typedef SDL_RWops : abi_pack [
 @import( "SDL_UpperBlit" ) multi sdl_blit_surface : (  src : SDL_Surface value_ptr, srcrect : abi_ptr,
 	dst : SDL_Surface value_ptr, dstrect : abi_ptr ) -> ( : abi_int) raw no_throw
 
-@import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣, 
-	mode : raw_array｢abi_char｣ ) -> ( : SDL_RWops value_ptr ) raw no_throw
+@import( "SDL_RWFromFile" ) multi sdl_rw_from_file : ( file : raw_array｢abi_char｣ value_ptr, 
+	mode : raw_array｢abi_char｣ value_ptr ) -> ( : SDL_RWops value_ptr ) raw no_throw
 
-@import( "SDL_GetError" ) multi sdl_get_error : () -> ( : raw_array｢abi_char｣ ) raw no_throw
+@import( "SDL_GetError" ) multi sdl_get_error : () -> ( : raw_array｢abi_char｣ value_ptr ) raw no_throw
 
-/*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ ) -> ( : SDL_Surface value_ptr ) { 
+/*defn sdl_load_bmp = ( file : raw_array｢abi_char｣ value_ptr) -> ( : SDL_Surface value_ptr ) { 
 	var f = sdl_rw_from_file(file, std.u8_encode("rb"))
 	var q = sdl_load_bmp_rw( f, 1)
 	return q
