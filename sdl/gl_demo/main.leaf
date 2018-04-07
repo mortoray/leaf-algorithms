@@ -1,4 +1,5 @@
 import math
+import sys
 
 var main = -> {
 	do {
@@ -10,23 +11,9 @@ var main = -> {
 
 
 var run = -> {
-
-	ignore sdl_gl_set_attribute( SDL_GL_RED_SIZE, 8 )
-	ignore sdl_gl_set_attribute( SDL_GL_GREEN_SIZE, 8 )
-	ignore sdl_gl_set_attribute( SDL_GL_BLUE_SIZE, 8 )
-	ignore sdl_gl_set_attribute( SDL_GL_DEPTH_SIZE, 16 )
-	ignore sdl_gl_set_attribute( SDL_GL_DOUBLEBUFFER, 1 )
-	
-	var app = sdl_app_window("Leaf SDL Window", 600, 450 )
-	
-	//var logo_tex = sdl_texture.from_file(app.renderer, "/src/leaf-algorithms/sdl/demo/logo.bmp")
-
-	var gl_ctx = sdl_gl_create_context( app.window )
-	check_sdl_ptr( "gl_create_context", as_abi_ptr(gl_ctx) )
+	var app = sdl_gl_window("Leaf SDL Window", 600, 450 )
 
 	var tex_tree = load_image_texture( "tree.jpg" )
-	
-	ignore sdl_gl_set_swap_interval( 1 )
 	
 	var program = gl_create_program()
 	check_gl_error( "create_program" )
@@ -34,29 +21,14 @@ var run = -> {
 	var vert_shader = gl_create_shader( GL_VERTEX_SHADER )
 	check_gl_error( "create_shader" )
 	
-	var vert_prog = "	#version 130
-		in vec2 LVertexPos2D; 
-		
-		varying vec2 texCoord;
-		void main() { 
-			gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); 
-			texCoord = LVertexPos2D/2 + 0.5;
-		}"
-	gl_shader_source( vert_shader, vert_prog )
+	var vert_f = sys.file.open_read( "gl_demo/basic.vert" )
+	gl_shader_source( vert_shader, vert_f.read_bytes() )
 
 	var frag_shader = gl_create_shader( GL_FRAGMENT_SHADER )
 	check_gl_error( "fragment_shader" )
 	
-	var frag_prog = "#version 130
-		out vec4 LFragment; 
-		varying highp vec2 texCoord;
-		uniform sampler2D tex;
-		
-		void main() { 
-			//LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); 
-			LFragment = texture2D(tex, texCoord);
-		}"
-	gl_shader_source( frag_shader, frag_prog )
+	var frag_f = sys.file.open_read( "gl_demo/basic.frag" )
+	gl_shader_source( frag_shader, frag_f.read_bytes() )
 	
 	gl_attach_shader( program, vert_shader )
 	check_gl_error( "attach_shader" )
@@ -144,6 +116,4 @@ var run = -> {
 		sdl_gl_swap_window( app.window )
 		iter += 1
 	}
-
-	sdl_gl_delete_context( gl_ctx )
 }

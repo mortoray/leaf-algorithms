@@ -1,0 +1,31 @@
+service sdl_gl_window {
+	var window : SDL_Window value_ptr
+	var context : SDL_GLContext value_ptr
+	
+	defn default = ( name : array｢char｣, w : integer, h : integer ) -> construct {
+		var q = sdl_init( SDL_INIT_VIDEO )
+		check_sdl( "sdl_init", q )
+
+		ignore sdl_gl_set_attribute( SDL_GL_RED_SIZE, 8 )
+		ignore sdl_gl_set_attribute( SDL_GL_GREEN_SIZE, 8 )
+		ignore sdl_gl_set_attribute( SDL_GL_BLUE_SIZE, 8 )
+		ignore sdl_gl_set_attribute( SDL_GL_DEPTH_SIZE, 16 )
+		ignore sdl_gl_set_attribute( SDL_GL_DOUBLEBUFFER, 1 )
+		
+		window = sdl_create_window( std.u8_encode(name).raw_ptr,  0, 0, lossy(w), lossy(h), 
+			SDL_WINDOW_SHOWN or SDL_WINDOW_RESIZABLE or SDL_WINDOW_OPENGL )
+		check_sdl_ptr( "window", as_abi_ptr(window) )
+	
+		var gl_ctx = sdl_gl_create_context( window )
+		check_sdl_ptr( "gl_create_context", as_abi_ptr(gl_ctx) )
+		
+		ignore sdl_gl_set_swap_interval( 1 )
+	}
+	
+	defn destroy = -> {
+		std.print( "Destroying SDL" )
+		sdl_destroy_window( window )
+		sdl_gl_delete_context( context )
+		sdl_quit()
+	}
+}

@@ -66,13 +66,12 @@ typedef raw_string : abi_pack [
 	strings : raw_array｢abi_ptr｣ value_ptr, length : raw_array｢GLint｣ value_ptr ) -> ( ) raw no_throw
 @import( "glCompileShader" ) multi gl_compile_shader : ( shader : GLuint ) -> ( ) raw no_throw
 
-defn gl_shader_source = ( shader : GLuint, data : array｢char｣ ) -> {
-	var q = std.u8_encode(data)
+defn gl_shader_source = ( shader : GLuint, data : array｢byte｣ /*TODO: value_ptr*/ ) -> {
 	var arr = array｢abi_ptr｣(1)
-	arr#0 = as_abi_ptr(q.raw_ptr)
+	arr#0 = as_abi_ptr(data.raw_ptr)
 	
 	var len = array｢GLint｣(1)
-	len#0 = lossy(q.size)
+	len#0 = lossy(data.size)
 	gl_shader_source_impl( shader, 1, arr.raw_ptr, len.raw_ptr )
 	check_gl_error("shader_source")
 	
