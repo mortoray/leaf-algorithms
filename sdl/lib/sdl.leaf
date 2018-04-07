@@ -18,6 +18,7 @@ typedef SDL_Surface : abi_pack [
 	format : SDL_PixelFormat value_ptr,
 	w : abi_int,
 	h : abi_int,
+	pitch : abi_int,
 	pixels : abi_ptr,
 	userdata : abi_ptr,
 	_locked : abi_int,

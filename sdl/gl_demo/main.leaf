@@ -1,3 +1,5 @@
+import math
+
 var main = -> {
 	do {
 		run()
@@ -5,6 +7,7 @@ var main = -> {
 		std.print( current_fail )
 	}
 }
+
 
 var run = -> {
 
@@ -21,6 +24,8 @@ var run = -> {
 	var gl_ctx = sdl_gl_create_context( app.window )
 	check_sdl_ptr( "gl_create_context", as_abi_ptr(gl_ctx) )
 
+	var tex_tree = load_image_texture( "tree.jpg" )
+	
 	ignore sdl_gl_set_swap_interval( 1 )
 	
 	var program = gl_create_program()
@@ -29,14 +34,28 @@ var run = -> {
 	var vert_shader = gl_create_shader( GL_VERTEX_SHADER )
 	check_gl_error( "create_shader" )
 	
-	var vert_prog = "	#version 130\nin vec2 LVertexPos2D; 
-	void main() { gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); } "
+	var vert_prog = "	#version 130
+		in vec2 LVertexPos2D; 
+		
+		varying vec2 texCoord;
+		void main() { 
+			gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 ); 
+			texCoord = LVertexPos2D/2 + 0.5;
+		}"
 	gl_shader_source( vert_shader, vert_prog )
 
 	var frag_shader = gl_create_shader( GL_FRAGMENT_SHADER )
 	check_gl_error( "fragment_shader" )
 	
-	var frag_prog = "#version 130\nout vec4 LFragment; void main() { LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); } "
+	var frag_prog = "#version 130
+		out vec4 LFragment; 
+		varying highp vec2 texCoord;
+		uniform sampler2D tex;
+		
+		void main() { 
+			//LFragment = vec4( 1.0, 1.0, 1.0, 1.0 ); 
+			LFragment = texture2D(tex, texCoord);
+		}"
 	gl_shader_source( frag_shader, frag_prog )
 	
 	gl_attach_shader( program, vert_shader )
@@ -72,9 +91,6 @@ var run = -> {
 	
 	var buffers = array｢GLuint｣(2)
 	gl_gen_buffers( 2, buffers.raw_ptr )
-	gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
-	gl_buffer_data( GL_ARRAY_BUFFER, 2 * 4 * /*sizeof(GLfloat)*/ 4, 
-		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(vertexData.raw_ptr), GL_STATIC_DRAW )
 		
 	gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
 	gl_buffer_data( GL_ELEMENT_ARRAY_BUFFER, 4 * 4 /*sizeof(GLuint)*/, 
@@ -83,6 +99,7 @@ var run = -> {
 	gl_clear_color(0,0.5,0.5,1)
 	
  	var run = true
+ 	var iter = 0
 	while run {
 		var e : SDL_Event
 		while sdl_poll_event(e) != 0 {
@@ -99,6 +116,12 @@ var run = -> {
 			}
 		}
 
+		vertexData#0 = lossy(-math.sin(lossy｢float｣(iter) * 0.01))
+		vertexData#1 = lossy(-math.sin(lossy｢float｣(iter) * 0.013))
+		gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
+		gl_buffer_data( GL_ARRAY_BUFFER, 2 * 4 * /*sizeof(GLfloat)*/ 4, 
+		
+		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(vertexData.raw_ptr), GL_STATIC_DRAW )
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
 		gl_use_program( program )
 		check_gl_error( "use_program" )
@@ -109,12 +132,17 @@ var run = -> {
 		gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
 		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * 4/*sizeof(GLFloat)*/, 0 )
 		check_gl_error( "attrib_pointer" )
+	
+		gl_active_texture(GL_TEXTURE0);
+		gl_bind_texture(GL_TEXTURE_2D, tex_tree);
+		gl_uniform1i( 0/*???*/, 0);
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
 		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
 		
 		gl_disable_vertex_attrib_array( vpos );
 		sdl_gl_swap_window( app.window )
+		iter += 1
 	}
 
 	sdl_gl_delete_context( gl_ctx )

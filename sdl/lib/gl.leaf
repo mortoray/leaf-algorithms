@@ -27,6 +27,7 @@ literal GL_TRIANGLE_FAN = 0x0006
 
 literal GL_FLOAT = 0x1406
 literal GL_UNSIGNED_INT = 0x1405
+literal GL_UNSIGNED_BYTE = 0x1401
 
 literal GL_ARRAY_BUFFER =  0x8892
 literal GL_ELEMENT_ARRAY_BUFFER = 0x8893
@@ -35,6 +36,17 @@ literal GL_FRAGMENT_SHADER = 0x8B30
 literal GL_VERTEX_SHADER = 0x8B31
 literal GL_COMPILE_STATUS = 0x8B81
 literal GL_INFO_LOG_LENGTH = 0x8B84
+
+literal GL_TEXTURE = 0x1702
+literal GL_RGB = 0x1907
+literal GL_RGBA = 0x1908
+
+literal GL_TEXTURE_2D = 0x0DE1
+literal GL_TEXTURE0 = 0x84C0
+
+literal GL_TEXTURE_MAG_FILTER = 0x2800
+literal GL_TEXTURE_MIN_FILTER = 0x2801
+literal GL_LINEAR = 0x2601
 
 @import( "glGetError" ) multi gl_get_error : ( ) -> ( : GLuint )  raw no_throw
 
@@ -83,8 +95,11 @@ defn gl_shader_source = ( shader : GLuint, data : array｢char｣ ) -> {
 @import( "glGetAttribLocation" ) multi gl_get_attrib_location : ( program : GLuint, name : raw_array｢abi_char｣ value_ptr ) -> ( : GLint) raw no_throw
 
 @import( "glGenBuffers" ) multi gl_gen_buffers : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+@import( "glGenTextures" ) multi gl_gen_textures : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
 
 @import( "glBindBuffer" ) multi gl_bind_buffer : ( target : GLenum, buffer : GLuint ) -> ( ) raw no_throw
+@import( "glBindTexture" ) multi gl_bind_texture : ( target : GLenum, buffer : GLuint ) -> ( ) raw no_throw
+@import( "glActiveTexture" ) multi gl_active_texture : ( texture : GLenum ) -> () raw no_throw
 
 @import( "glBufferData" ) multi gl_buffer_data : ( target : GLenum, size : GLsizeiptr, 
 	data : raw_array｢abi_char｣ value_ptr, usage : GLenum) -> () raw no_throw
@@ -117,3 +132,12 @@ defn gl_get_shader_log = ( shader : GLuint ) -> ( : array｢char｣ ) {
  
 
 @import( "glViewport" ) multi gl_viewport : ( x : GLint, y : GLint, width : GLsizei, height : GLsizei) -> () raw no_throw
+
+@import( "glTexImage2D") multi gl_tex_image_2d : ( target : GLenum, level : GLint,
+  	internalFormat : GLint, width : GLsizei, height : GLsizei, border : GLint,
+  	format : GLenum, type_ : GLenum, data : abi_ptr ) -> () raw no_throw
+
+@import( "glTexParameteri" ) multi gl_tex_parameteri : ( target : GLenum, pname : GLenum, param : GLint ) -> () raw no_throw
+
+
+@import( "glUniform1i" ) multi gl_uniform1i : ( location : GLint, v0 : GLint ) -> () raw no_throw
