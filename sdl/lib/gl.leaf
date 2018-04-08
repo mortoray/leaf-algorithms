@@ -92,9 +92,12 @@ defn gl_shader_source = ( shader : GLuint, data : array｢byte｣ /*TODO: value_
 @import( "glAttachShader" ) multi gl_attach_shader : ( program : GLuint, shader: GLuint ) -> () raw no_throw
 
 @import( "glGetAttribLocation" ) multi gl_get_attrib_location : ( program : GLuint, name : raw_array｢abi_char｣ value_ptr ) -> ( : GLint) raw no_throw
+@import( "glGetUniformLocation" ) multi gl_get_uniform_location : ( program : GLuint, name : raw_array｢abi_char｣ value_ptr ) -> ( : GLint) raw no_throw
 
 @import( "glGenBuffers" ) multi gl_gen_buffers : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
 @import( "glGenTextures" ) multi gl_gen_textures : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+@import( "glDeleteTextures" ) multi gl_delete_textures : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+
 
 @import( "glBindBuffer" ) multi gl_bind_buffer : ( target : GLenum, buffer : GLuint ) -> ( ) raw no_throw
 @import( "glBindTexture" ) multi gl_bind_texture : ( target : GLenum, buffer : GLuint ) -> ( ) raw no_throw
@@ -140,3 +143,7 @@ defn gl_get_shader_log = ( shader : GLuint ) -> ( : array｢char｣ ) {
 
 
 @import( "glUniform1i" ) multi gl_uniform1i : ( location : GLint, v0 : GLint ) -> () raw no_throw
+
+@import( "glProgramUniform1i" ) multi gl_program_uniform1i :  ( program :GLuint,
+	location : GLint, v0 : GLint) -> () raw no_throw
+	

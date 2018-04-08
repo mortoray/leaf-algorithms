@@ -1,27 +1,38 @@
 @import("IMG_Load") multi img_load : ( : raw_array｢abi_char｣ value_ptr ) -> ( : SDL_Surface value_ptr ) raw no_throw
 
-//http://www.sdltutorials.com/sdl-tip-sdl-surface-to-opengl-texture
-defn load_image_texture = ( file : array｢char｣ ) -> ( : GLuint ) {
-	var sdl_tex = img_load( std.u8_encode(file).raw_ptr )
-	std.println(["Loaded ", file, " ", sdl_tex.w, "x", sdl_tex.h, " :: ", sdl_tex.pixels])
+service gl_texture {
+	var buffer : GLuint
+
+	//http://www.sdltutorials.com/sdl-tip-sdl-surface-to-opengl-texture
+	defn from_file = ( file : array｢char｣ ) -> construct {
+		var sdl_tex = img_load( std.u8_encode(file).raw_ptr )
+		
+		var buffers = array｢GLuint｣(1)
+		gl_gen_textures( 1, buffers.raw_ptr )
+		check_gl_error("gen_textures")
+		gl_bind_texture( GL_TEXTURE_2D, buffers#0 )
+		check_gl_error("bind_texture")
+		
+		var mode : integer 32bit = GL_RGB
+		
+		//if(Surface->format->BytesPerPixel == 4) {
+		//	Mode = GL_RGBA;
+		//}	
+		
+		gl_tex_image_2d(GL_TEXTURE_2D, 0, mode, lossy(sdl_tex.w), lossy(sdl_tex.h), 0, mode, GL_UNSIGNED_BYTE, sdl_tex.pixels)
+		check_gl_error("tex_image_2d")
 	
-	var buffers = array｢GLuint｣(1)
-	gl_gen_textures( 1, buffers.raw_ptr )
-	check_gl_error("gen_textures")
-	gl_bind_texture( GL_TEXTURE_2D, buffers#0 )
-	check_gl_error("bind_texture")
+		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+		
+		this.buffer = buffers#0
+		sdl_free_surface( sdl_tex )
+	}
 	
-	var mode : integer 32bit = GL_RGB
-	
-	//if(Surface->format->BytesPerPixel == 4) {
-	//	Mode = GL_RGBA;
-	//}	
-	
-	gl_tex_image_2d(GL_TEXTURE_2D, 0, mode, lossy(sdl_tex.w), lossy(sdl_tex.h), 0, mode, GL_UNSIGNED_BYTE, sdl_tex.pixels)
-	check_gl_error("tex_image_2d")
- 
-	gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-	gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-	
-	return buffers#0
+	defn destroy = -> {
+		//std.println(["gl_texture.destroy"])
+		var buffers = array｢GLuint｣(1)
+		buffers#0 = buffer
+		gl_delete_textures( 1, buffers.raw_ptr )
+	}
 }

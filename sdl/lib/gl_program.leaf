@@ -1,0 +1,70 @@
+service gl_program {
+
+	var program : GLuint
+	
+	var _shader_vertex : GLuint
+	var _shader_fragment : GLuint
+	
+	defn default = -> construct {
+		program = gl_create_program()
+		check_gl_error( "create_program" )
+	}
+	
+	defn attach_vertex_shader = ( filename : array｢char｣ ) -> {
+		_shader_vertex = _attach_shader( GL_VERTEX_SHADER, filename )
+	}
+	
+	defn attach_fragment_shader = ( filename : array｢char｣ ) -> {
+		_shader_fragment = _attach_shader( GL_FRAGMENT_SHADER, filename )
+	}
+	
+	defn _attach_shader = ( which : GLuint, filename : array｢char｣ ) -> {
+		var shader = gl_create_shader( which )
+		check_gl_error( "create_shader" )
+		
+		var f = sys.file.open_read( filename )
+		gl_shader_source( shader, f.read_bytes() )
+		
+		gl_attach_shader( program, shader )
+		check_gl_error( "attach_shader" )
+		
+		return shader
+	}
+	
+	defn link = -> {
+		gl_link_program( program )
+		check_gl_error( "link_program" )
+		//TODO: check Programiv LINK_STATUS
+	}
+
+	defn get_attrib_location = ( name : array｢char｣ ) -> {
+		var vpos = gl_get_attrib_location( program, std.u8_encode(name).raw_ptr )
+		check_gl_error( "get_attrib" )
+		vpos == -1 then {
+			fail string_tag( "get_attrib" )
+		}
+		return vpos
+	}
+	
+	defn get_uniform_location = ( name : array｢char｣ ) -> {
+		var vpos = gl_get_uniform_location( program, std.u8_encode(name).raw_ptr )
+		check_gl_error( "get_uniform_location" )
+		vpos == -1 then {
+			fail string_tag( "get_uniform_location" )
+		}
+		return vpos
+	}
+	
+	defn use = -> {
+		gl_use_program( program )
+		check_gl_error( "use_program" )
+	}
+	
+	defn destroy = -> {
+		//TODO: destroy stuff
+	}
+
+	defn set_uniform = ( location : GLint, v : GLint ) -> {
+		gl_program_uniform1i( program, location, v )
+	}
+}

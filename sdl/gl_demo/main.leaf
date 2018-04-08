@@ -13,37 +13,15 @@ var main = -> {
 var run = -> {
 	var app = sdl_gl_window("Leaf SDL Window", 600, 450 )
 
-	var tex_tree = load_image_texture( "tree.jpg" )
+	var tex_tree = gl_texture.from_file( "tree.jpg" )
 	
-	var program = gl_create_program()
-	check_gl_error( "create_program" )
+	var program : gl_program
+	program.attach_vertex_shader( "gl_demo/basic.vert" )
+	program.attach_fragment_shader( "gl_demo/basic.frag" )
+	program.link()
 	
-	var vert_shader = gl_create_shader( GL_VERTEX_SHADER )
-	check_gl_error( "create_shader" )
-	
-	var vert_f = sys.file.open_read( "gl_demo/basic.vert" )
-	gl_shader_source( vert_shader, vert_f.read_bytes() )
-
-	var frag_shader = gl_create_shader( GL_FRAGMENT_SHADER )
-	check_gl_error( "fragment_shader" )
-	
-	var frag_f = sys.file.open_read( "gl_demo/basic.frag" )
-	gl_shader_source( frag_shader, frag_f.read_bytes() )
-	
-	gl_attach_shader( program, vert_shader )
-	check_gl_error( "attach_shader" )
-	gl_attach_shader( program, frag_shader )
-	check_gl_error( "attach_shader" )
-	
-	gl_link_program( program )
-	check_gl_error( "link_program" )
-	//TODO: check Programiv LINK_STATUS
-	
-	var vpos = gl_get_attrib_location( program, std.u8_encode("LVertexPos2D").raw_ptr )
-	check_gl_error( "get_attrib" )
-	vpos == -1 then {
-		fail string_tag( "get_attrib" )
-	}
+	var vpos = program.get_attrib_location( "LVertexPos2D" )
+	var tex_pos = program.get_uniform_location( "tex" )
 	
 	var vertexData = array｢GLfloat｣(8)
 	vertexData#0 = -0.5
@@ -95,8 +73,7 @@ var run = -> {
 		
 		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(vertexData.raw_ptr), GL_STATIC_DRAW )
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
-		gl_use_program( program )
-		check_gl_error( "use_program" )
+		program.use()
 		
 		gl_enable_vertex_attrib_array( vpos );
 		check_gl_error( "vertex_attrib" )
@@ -105,14 +82,14 @@ var run = -> {
 		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * 4/*sizeof(GLFloat)*/, 0 )
 		check_gl_error( "attrib_pointer" )
 	
-		gl_active_texture(GL_TEXTURE0);
-		gl_bind_texture(GL_TEXTURE_2D, tex_tree);
-		gl_uniform1i( 0/*???*/, 0);
+		gl_active_texture(GL_TEXTURE0)
+		gl_bind_texture(GL_TEXTURE_2D, tex_tree.buffer)
+		program.set_uniform( tex_pos, 0 )
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
 		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
 		
-		gl_disable_vertex_attrib_array( vpos );
+		gl_disable_vertex_attrib_array( vpos )
 		sdl_gl_swap_window( app.window )
 		iter += 1
 	}
