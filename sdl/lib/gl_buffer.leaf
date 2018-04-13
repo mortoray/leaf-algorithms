@@ -1,0 +1,34 @@
+import xcollections as collections
+
+service gl_buffer｢T｣ {
+ 	var _data : collections.vector｢T｣
+	var _buffer : GLuint
+	var _target : GLenum
+	
+	defn default = ( target : GLenum ) -> construct {
+		_buffer = gl_gen_buffer()
+		_target = target
+	}
+	
+	defn push = ( item : T ) -> {
+		_data.add( item )
+	}
+	
+	defn set = ( index : integer, item : T ) -> {
+		_data.set(index, item)
+	}
+	
+	defn bind_and_push = ( usage : GLenum ) -> {
+		gl_bind_buffer( _target, _buffer )
+		gl_buffer_data( _target, lossy(_data.get_size() * T.aligned_value_size), 
+				cast_ptr｢raw_array｢abi_char｣ value_ptr｣(_data.get_raw_ptr()), usage )
+	}
+	
+	defn get_buffer = -> {
+		return _buffer
+	}
+	
+	defn destroy = -> {
+		gl_delete_buffer( _buffer )
+	}
+}

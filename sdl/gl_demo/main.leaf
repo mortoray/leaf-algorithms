@@ -9,6 +9,10 @@ var main = -> {
 	}
 }
 
+typedef GLfloat2 : [
+	x : GLfloat,
+	y : GLfloat,
+]
 
 var run = -> {
 	var app = sdl_gl_window("Leaf SDL Window", 600, 450 )
@@ -21,35 +25,33 @@ var run = -> {
 	program.link()
 	
 	var vpos = program.get_attrib_location( "LVertexPos2D" )
+	var tc_pos = program.get_attrib_location( "LTexCoord" )
 	var tex_pos = program.get_uniform_location( "tex" )
 	
-	var vertexData = array｢GLfloat｣(8)
-	vertexData#0 = -0.5
-	vertexData#1 = -0.5
-	vertexData#2 = 0.5
-	vertexData#3 = -0.5
-	vertexData#4 = 0.5
-	vertexData#5 = 0.5
-	vertexData#6 = -0.5
-	vertexData#7 = 0.5
+	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
+	vertex_data.push( [ -0.5, -0.5 ] )
+	vertex_data.push( [ 0.5, -0.5 ] )
+	vertex_data.push( [ 0.5, 0.5 ] )
+	vertex_data.push( [ -0.5, 0.5 ] )
 	
-	var indexData = array｢GLuint｣(4)
-	indexData#0 = 0
-	indexData#1 = 1
-	indexData#2 = 2
-	indexData#3 = 3
+	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
+	index_data.push(0)
+	index_data.push(1)
+	index_data.push(2)
+	index_data.push(3)
+	index_data.bind_and_push( GL_STATIC_DRAW )
 	
-	var buffers = array｢GLuint｣(2)
-	gl_gen_buffers( 2, buffers.raw_ptr )
-		
-	gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
-	gl_buffer_data( GL_ELEMENT_ARRAY_BUFFER, 4 * 4 /*sizeof(GLuint)*/, 
-		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(indexData.raw_ptr), GL_STATIC_DRAW )
+	var tex_coord = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
+	tex_coord.push( [0,0] )
+	tex_coord.push( [1,0] )
+	tex_coord.push( [1,1] )
+	tex_coord.push( [0,1] )
+	tex_coord.bind_and_push( GL_STATIC_DRAW )
 	
 	gl_clear_color(0,0.5,0.5,1)
 	
  	var run = true
- 	var iter = 0
+ 	var iter : float = 0
 	while run {
 		var e : SDL_Event
 		while sdl_poll_event(e) != 0 {
@@ -66,30 +68,36 @@ var run = -> {
 			}
 		}
 
-		vertexData#0 = lossy(-math.sin(lossy｢float｣(iter) * 0.01))
-		vertexData#1 = lossy(-math.sin(lossy｢float｣(iter) * 0.013))
-		gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
-		gl_buffer_data( GL_ARRAY_BUFFER, 2 * 4 * /*sizeof(GLfloat)*/ 4, 
+		for r in std.range(0,4) {
+			var ang = lossy｢float｣(r) * math.pi / 2 + iter * 0.005
+			var sz = math.sin(iter * 0.02*lossy(r) + lossy(r))/4 +0.75
+			vertex_data.set( r, [lossy(math.cos(ang) * sz), lossy(math.sin(ang) * sz)] )
+		}
+		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		
-		cast_ptr｢raw_array｢abi_char｣ value_ptr｣(vertexData.raw_ptr), GL_STATIC_DRAW )
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
 		program.use()
 		
 		gl_enable_vertex_attrib_array( vpos );
+		gl_enable_vertex_attrib_array( tc_pos );
 		check_gl_error( "vertex_attrib" )
 		
-		gl_bind_buffer( GL_ARRAY_BUFFER, buffers#0 )
+		gl_bind_buffer( GL_ARRAY_BUFFER, vertex_data.get_buffer() )
 		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * 4/*sizeof(GLFloat)*/, 0 )
 		check_gl_error( "attrib_pointer" )
+		
+		gl_bind_buffer( GL_ARRAY_BUFFER, tex_coord.get_buffer() )
+		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * 4/*sizeof(GLFloat)*/, 0)
 	
 		gl_active_texture(GL_TEXTURE0)
 		gl_bind_texture(GL_TEXTURE_2D, tex_tree.buffer)
 		program.set_uniform( tex_pos, 0 )
 		
-		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, buffers#1 )
+		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
 		
 		gl_disable_vertex_attrib_array( vpos )
+		gl_disable_vertex_attrib_array( tc_pos )
 		sdl_gl_swap_window( app.window )
 		iter += 1
 	}
