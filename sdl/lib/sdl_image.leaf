@@ -15,9 +15,9 @@ service gl_texture {
 		
 		var mode : integer 32bit = GL_RGB
 		
-		//if(Surface->format->BytesPerPixel == 4) {
-		//	Mode = GL_RGBA;
-		//}	
+		sdl_tex.format.bytes_per_pixel == 4 then {
+			mode = GL_RGBA
+		}	
 		
 		gl_tex_image_2d(GL_TEXTURE_2D, 0, mode, lossy(sdl_tex.w), lossy(sdl_tex.h), 0, mode, GL_UNSIGNED_BYTE, sdl_tex.pixels)
 		check_gl_error("tex_image_2d")

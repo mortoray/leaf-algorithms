@@ -1,0 +1,77 @@
+import math
+import sys
+
+var main = -> {
+	do {
+		run()
+	} on fail {
+		std.print( current_fail )
+	}
+}
+
+typedef GLfloat2 : [
+	x : GLfloat,
+	y : GLfloat,
+]
+
+var run = -> {
+	var app = sdl_gl_window("Wormies", 600, 450 )
+	
+	var state : shared game
+	
+	var program : gl_program
+	program.attach_vertex_shader( "wormies/boxes.vert" )
+	program.attach_fragment_shader( "wormies/boxes.frag" )
+	program.link()
+	
+	var vpos_pos = program.get_attrib_location( "vertex_pos" )
+	var game_size_pos = program.get_uniform_location( "game_size" )
+	
+	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
+	vertex_data.push( [ lossy(state.head_pos.x), lossy(state.head_pos.y) ] )
+	vertex_data.push( [ lossy(state.head_pos.x+1), lossy(state.head_pos.y) ] )
+	vertex_data.push( [ lossy(state.head_pos.x+1), lossy(state.head_pos.y+1) ] )
+	vertex_data.push( [ lossy(state.head_pos.x), lossy(state.head_pos.y+1) ] )
+	
+	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
+	index_data.push(0)
+	index_data.push(1)
+	index_data.push(2)
+	index_data.push(3)
+	index_data.bind_and_push( GL_STATIC_DRAW )
+	
+ 	var run = true
+	while run {
+		var e : SDL_Event
+		while sdl_poll_event(e) != 0 {
+			var q = sdl_poll_event(e)
+			e.type_ == SDL_QUIT then  {
+				run = false
+			}
+			e.type_ == SDL_WINDOWEVENT then {
+				var win_ev = cast_ptr｢SDL_WindowEvent value_ptr｣(e)
+				win_ev.event == SDL_WINDOWEVENT_SIZE_CHANGED then {
+					var window_sz = sdl_get_window_size(app.window)
+					gl_viewport( 0, 0, window_sz.x, window_sz.y )
+				}
+			}
+		}
+
+		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
+		
+		gl_clear_color(0.1,0.1,0.1,1)
+		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
+
+		program.use()
+		gl_enable_vertex_attrib_array( vpos_pos )
+		gl_vertex_attrib_pointer( vpos_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
+		
+		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
+		
+		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
+		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
+		
+		gl_disable_vertex_attrib_array( vpos_pos )
+		sdl_gl_swap_window( app.window )
+	}
+}

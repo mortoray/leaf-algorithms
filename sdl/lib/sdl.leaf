@@ -31,7 +31,16 @@ typedef SDL_Surface : abi_pack [
 	
 @import( "SDL_FillRect" ) multi sdl_fill_rect : ( surface : SDL_Surface value_ptr, rect : abi_ptr, color : binary 32bit ) -> ( : abi_int ) raw no_throw
 
+typedef SDL_Palette : abi_pack [ ]
 typedef SDL_PixelFormat : abi_pack [
+	format : binary 32bit,
+	palette : SDL_Palette value_ptr,
+	bits_per_pixel : binary 8bit,
+	bytes_per_pixel : binary 8bit,
+	rmask : binary 32bit,
+	gmask : binary 32bit,
+	bmask : binary 32bit,
+	amask : binary 32bit,
 ]
 @import( "SDL_MapRGB" ) multi sdl_map_rgb : ( format : SDL_PixelFormat value_ptr, r : octet, b : octet, c : octet ) -> ( : binary 32bit ) raw no_throw
 
@@ -186,3 +195,15 @@ defn sdl_get_window_size = ( window : SDL_Window value_ptr ) -> {
 	sdl_get_window_size_( window, w, h )
 	return [x=w,y=h]
 }
+
+
+typedef SDL_Color : abi_pack [
+	r : binary 8bit,
+	g : binary 8bit,
+	b : binary 8bit,
+	a : binary 8bit,
+]
+
+literal SDL_PIXELFORMAT_RGBA8888 = 0x16462004
+@import( "SDL_ConvertSurfaceFormat" ) multi sdl_convert_surface_format : ( src : SDL_Surface value_ptr,
+	pixel_format : binary 32bit, flags : binary 32bit ) -> ( : SDL_Surface value_ptr) raw no_throw

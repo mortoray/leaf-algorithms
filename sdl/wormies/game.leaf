@@ -1,0 +1,14 @@
+typedef ipoint : [
+	x : integer,
+	y : integer,
+]
+
+class game {
+	var size : ipoint
+	var head_pos : ipoint
+	
+	defn default = -> construct {
+		size = [ 30, 20 ]
+		head_pos = [ 10, 7 ]
+	}
+}
