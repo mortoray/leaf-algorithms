@@ -17,6 +17,9 @@ var run = -> {
 	var renderer : game_renderer
 	
  	var run = true
+ 	var last_ticks = sdl_get_ticks()
+ 	var elapsed_ticks : type_infer(last_ticks) = 0
+ 	
 	while run {
 		var e : SDL_Event
 		while sdl_poll_event(e) != 0 {
@@ -39,6 +42,13 @@ var run = -> {
 				key_ev.keysym.sym == SDLK_LEFT then { state.move(-1,0) }
 				key_ev.keysym.sym == SDLK_RIGHT then { state.move(1,0) }
 			}
+		}
+		var cur_ticks = sdl_get_ticks()
+		elapsed_ticks += cur_ticks - last_ticks
+		last_ticks = cur_ticks
+		while elapsed_ticks > 250 {
+			state.step()
+			elapsed_ticks -= 250
 		}
 		
 		gl_clear_color(0.1,0.1,0.1,1)
