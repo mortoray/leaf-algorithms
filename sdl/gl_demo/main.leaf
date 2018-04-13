@@ -27,6 +27,8 @@ var run = -> {
 	var vpos = program.get_attrib_location( "LVertexPos2D" )
 	var tc_pos = program.get_attrib_location( "LTexCoord" )
 	var tex_pos = program.get_uniform_location( "tex" )
+	var position_pos = program.get_uniform_location( "position" )
+	var size_pos = program.get_uniform_location( "size" )
 	
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	vertex_data.push( [ -0.5, -0.5 ] )
@@ -83,17 +85,28 @@ var run = -> {
 		check_gl_error( "vertex_attrib" )
 		
 		gl_bind_buffer( GL_ARRAY_BUFFER, vertex_data.get_buffer() )
-		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * 4/*sizeof(GLFloat)*/, 0 )
+		gl_vertex_attrib_pointer( vpos, 2, GL_FLOAT, GL_FALSE, 2  * GLfloat.aligned_value_size, 0 )
 		check_gl_error( "attrib_pointer" )
 		
 		gl_bind_buffer( GL_ARRAY_BUFFER, tex_coord.get_buffer() )
-		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * 4/*sizeof(GLFloat)*/, 0)
-	
+		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0)
+
+		var off_r = lossy｢GLfloat｣((math.sin(iter*0.02)+1)/2)
 		gl_active_texture(GL_TEXTURE0)
 		gl_bind_texture(GL_TEXTURE_2D, tex_tree.buffer)
 		program.set_uniform( tex_pos, 0 )
+		program.set_uniform( position_pos, 0.3 * off_r, 0.3 * off_r )
+		program.set_uniform( size_pos, 1.2, 1.2 )
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
+		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
+		
+		program.set_uniform( position_pos, -0.1 * off_r, -0.1 * off_r )
+		program.set_uniform( size_pos, 0.8, 0.8 )
+		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
+		
+		program.set_uniform( position_pos, -0.5 * off_r, -0.5 * off_r)
+		program.set_uniform( size_pos, 0.4, 0.4)
 		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
 		
 		gl_disable_vertex_attrib_array( vpos )

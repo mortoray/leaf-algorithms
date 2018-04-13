@@ -161,4 +161,5 @@ defn gl_get_shader_log = ( shader : GLuint ) -> ( : array｢char｣ ) {
 
 @import( "glProgramUniform1i" ) multi gl_program_uniform1i :  ( program :GLuint,
 	location : GLint, v0 : GLint) -> () raw no_throw
-	
+@import( "glProgramUniform2f" ) multi gl_program_uniform2f :  ( program :GLuint,
+	location : GLint, v0 : GLfloat, v2 : GLfloat) -> () raw no_throw

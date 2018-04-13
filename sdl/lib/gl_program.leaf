@@ -67,4 +67,8 @@ service gl_program {
 	defn set_uniform = ( location : GLint, v : GLint ) -> {
 		gl_program_uniform1i( program, location, v )
 	}
+	
+	defn set_uniform = ( location : GLint, v0 : GLfloat, v1 : GLfloat ) -> {
+		gl_program_uniform2f( program, location, v0, v1 )
+	}
 }
