@@ -11,4 +11,10 @@ class game {
 		size = [ 30, 20 ]
 		head_pos = [ 10, 7 ]
 	}
+	
+	defn move = ( xoff : integer, yoff  : integer ) -> {
+		head_pos.x = mod(head_pos.x + xoff, size.x)
+		head_pos.y = mod(head_pos.y + yoff, size.y)
+	}
+	
 }

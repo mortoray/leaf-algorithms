@@ -55,8 +55,20 @@ var run = -> {
 					gl_viewport( 0, 0, window_sz.x, window_sz.y )
 				}
 			}
+			e.type_ == SDL_KEYDOWN then {
+				var key_ev = cast_ptr｢SDL_KeyboardEvent value_ptr｣(e)
+				//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
+				key_ev.keysym.sym == SDLK_UP then { state.move(0,1) }
+				key_ev.keysym.sym == SDLK_DOWN then { state.move(0,-1) }
+				key_ev.keysym.sym == SDLK_LEFT then { state.move(-1,0) }
+				key_ev.keysym.sym == SDLK_RIGHT then { state.move(1,0) }
+			}
 		}
 
+		vertex_data.set( 0, [ lossy(state.head_pos.x), lossy(state.head_pos.y) ] )
+		vertex_data.set( 1, [ lossy(state.head_pos.x+1), lossy(state.head_pos.y) ] )
+		vertex_data.set( 2, [ lossy(state.head_pos.x+1), lossy(state.head_pos.y+1) ] )
+		vertex_data.set( 3, [ lossy(state.head_pos.x), lossy(state.head_pos.y+1) ] )
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		
 		gl_clear_color(0.1,0.1,0.1,1)
