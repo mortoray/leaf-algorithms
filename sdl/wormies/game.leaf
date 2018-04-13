@@ -6,6 +6,7 @@ typedef ipoint : [
 class game {
 	var size : ipoint
 	var head_pos : ipoint
+	var body : collections.vector｢ipoint｣
 	
 	defn default = -> construct {
 		size = [ 30, 20 ]
@@ -13,8 +14,13 @@ class game {
 	}
 	
 	defn move = ( xoff : integer, yoff  : integer ) -> {
+		body.add( head_pos )
 		head_pos.x = mod(head_pos.x + xoff, size.x)
 		head_pos.y = mod(head_pos.y + yoff, size.y)
+		
+		body.get_size() > 10 then {
+			body.remove(0)
+		}
 	}
 	
 }

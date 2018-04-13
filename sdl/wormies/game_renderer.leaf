@@ -1,3 +1,8 @@
+typedef GLfloat2 : [
+	x : GLfloat,
+	y : GLfloat,
+]
+
 service game_renderer {
 	var program : gl_program
 	
@@ -21,18 +26,35 @@ service game_renderer {
 		vertex_data.push([0,0])
 		vertex_data.push([0,0])
 		
-		index_data.push(0)
-		index_data.push(1)
-		index_data.push(2)
-		index_data.push(3)
-		index_data.bind_and_push( GL_STATIC_DRAW )
+	}
+
+	defn _push_box = ( pos : ipoint ) -> {
+		var vdp = lossy｢GLuint｣(vertex_data.get_size())
+		
+		vertex_data.push( [ lossy(pos.x), lossy(pos.y) ] )
+		vertex_data.push( [ lossy(pos.x+1), lossy(pos.y) ] )
+		vertex_data.push( [ lossy(pos.x+1), lossy(pos.y+1) ] )
+		vertex_data.push( [ lossy(pos.x), lossy(pos.y+1) ] )
+		
+		//TODO: efficiency by damned!  (don't update if not changed)
+		index_data.push(vdp + 0)
+		index_data.push(vdp + 1)
+		index_data.push(vdp + 2)
+		
+		index_data.push(vdp + 0)
+		index_data.push(vdp + 2)
+		index_data.push(vdp + 3)
 	}
 	
 	defn render = ( state : shared game ) -> {
-		vertex_data.set( 0, [ lossy(state.head_pos.x), lossy(state.head_pos.y) ] )
-		vertex_data.set( 1, [ lossy(state.head_pos.x+1), lossy(state.head_pos.y) ] )
-		vertex_data.set( 2, [ lossy(state.head_pos.x+1), lossy(state.head_pos.y+1) ] )
-		vertex_data.set( 3, [ lossy(state.head_pos.x), lossy(state.head_pos.y+1) ] )
+		vertex_data.clear()
+		index_data.clear()
+		for i in std.range(0, state.body.get_size()) {
+			_push_box( state.body.get(i) )
+		}
+		_push_box( state.head_pos )
+		
+		index_data.bind_and_push( GL_STATIC_DRAW )
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 	
 		program.use()
@@ -43,7 +65,7 @@ service game_renderer {
 		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
-		gl_draw_elements( GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0 )
+		gl_draw_elements( GL_TRIANGLES, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )
 		
 		gl_disable_vertex_attrib_array( vpos_pos )
 	}

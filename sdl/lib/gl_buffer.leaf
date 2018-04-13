@@ -18,6 +18,14 @@ service gl_buffer｢T｣ {
 		_data.set(index, item)
 	}
 	
+	defn clear = () -> {
+		_data.clear()
+	}
+	
+	defn get_size = -> {
+		return _data.get_size()
+	}
+	
 	defn bind_and_push = ( usage : GLenum ) -> {
 		gl_bind_buffer( _target, _buffer )
 		gl_buffer_data( _target, lossy(_data.get_size() * T.aligned_value_size), 

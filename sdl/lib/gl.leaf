@@ -24,6 +24,8 @@ literal GL_STENCIL_BUFFER_BIT = 0x00000400
 @import( "glLinkProgram" ) multi gl_link_program : ( program : GLuint ) -> ( ) raw no_throw
 
 literal GL_TRIANGLE_FAN = 0x0006
+literal GL_TRIANGLES = 0x0004
+
 
 literal GL_FLOAT = 0x1406
 literal GL_UNSIGNED_INT = 0x1405

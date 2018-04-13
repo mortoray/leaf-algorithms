@@ -9,11 +9,6 @@ var main = -> {
 	}
 }
 
-typedef GLfloat2 : [
-	x : GLfloat,
-	y : GLfloat,
-]
-
 var run = -> {
 	var app = sdl_gl_window("Wormies", 600, 450 )
 	
