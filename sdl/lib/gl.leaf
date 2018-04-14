@@ -142,6 +142,21 @@ defn gl_get_shader_log = ( shader : GLuint ) -> ( : array｢char｣ ) {
 
 @import( "glUseProgram" ) multi gl_use_program : ( program : GLuint ) -> () raw no_throw
 
+@import( "glGenVertexArrays" )  multi gl_gen_vertex_arrays : ( n : GLsizei, arrays : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+defn gl_gen_vertex_array =() -> {
+	var buffers = array｢GLuint｣(1)
+	gl_gen_vertex_arrays( 1, buffers.raw_ptr )
+	check_gl_error( "gl_gen_vertex_array" )
+	return buffers#0
+}
+@import( "glDeleteVertexArrays" ) multi gl_delete_vertex_arrays : ( n : GLsizei, buffers : raw_array｢GLuint｣ value_ptr) -> ( ) raw no_throw
+defn gl_delete_vertex_array = ( buffer : GLuint ) -> {
+	var buffers = array｢GLuint｣(1)
+	buffers#0 = buffer
+	gl_delete_vertex_arrays( 1, buffers.raw_ptr )
+}
+@import( "glBindVertexArray" ) multi gl_bind_vertex_array : ( array_ : GLuint ) -> () raw no_throw
+
 @import( "glVertexAttribPointer" ) multi gl_vertex_attrib_pointer : ( index : GLuint,
   	size : GLint, type_ : 	GLenum, normalized : GLboolean, stride : 	GLsizei,
   	pointer : abi_ptr ) -> () raw no_throw
