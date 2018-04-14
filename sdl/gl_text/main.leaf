@@ -25,7 +25,7 @@ var run = -> {
 		return
 	}
 	
-	var tex_tree = gl_text_texture.from_text( font, "Hello!" )
+	var tex_tree = gl_text_texture.from_text( font, "Hello" )
 	//var tex_tree = gl_texture.from_file( "eggplant.png" )
 
 	

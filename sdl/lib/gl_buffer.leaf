@@ -28,8 +28,14 @@ service gl_buffer｢T｣ {
 	
 	defn bind_and_push = ( usage : GLenum ) -> {
 		gl_bind_buffer( _target, _buffer )
+		check_gl_error("bind_buffer")
+		
 		gl_buffer_data( _target, lossy(_data.get_size() * T.aligned_value_size), 
 				cast_ptr｢raw_array｢abi_char｣ value_ptr｣(_data.get_raw_ptr()), usage )
+		check_gl_error(" bind_and_push")
+		
+		std.println([_buffer, " @", _target, " count:", _data.get_size(),
+			" total:", _data.get_size() * T.aligned_value_size])
 	}
 	
 	defn get_buffer = -> {

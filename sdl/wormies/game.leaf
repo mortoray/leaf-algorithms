@@ -8,24 +8,35 @@ class game {
 	var head_pos : ipoint
 	var dir : ipoint
 	var body : collections.vector｢ipoint｣
+	var req_dir : collections.vector｢ipoint｣
+	var body_length : integer = 4
+	var eat_me : ipoint
 	
 	defn default = -> construct {
 		size = [ 30, 20 ]
 		head_pos = [ 10, 7 ]
+		eat_me = [ 20, 13 ]
 	}
 	
 	defn move = ( xoff : integer, yoff  : integer ) -> {
-		dir = [ xoff, yoff ]
 		body.add( head_pos )
 		head_pos.x = mod(head_pos.x + xoff, size.x)
 		head_pos.y = mod(head_pos.y + yoff, size.y)
 		
-		body.get_size() > 10 then {
+		body.get_size() > body_length then {
 			body.remove(0)
 		}
 	}
 	
 	defn step = -> {
+		req_dir.get_size() > 0 then {
+			dir = req_dir.get(0)
+			req_dir.remove(0)
+		}
 		move( dir.x, dir. y)
+	}
+	
+	defn req_move = ( xoff : integer, yoff : integer ) -> {
+		req_dir.add( [ xoff, yoff ] )
 	}
 }

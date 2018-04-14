@@ -23,7 +23,7 @@ service sdl_gl_window {
 	}
 	
 	defn destroy = -> {
-		std.print( "Destroying SDL" )
+		std.println([ "Destroying SDL" ])
 		sdl_destroy_window( window )
 		sdl_gl_delete_context( context )
 		sdl_quit()

@@ -3,14 +3,22 @@ typedef GLfloat2 : [
 	y : GLfloat,
 ]
 
+typedef GLfloat3 : [
+	r : GLfloat,
+	g : GLfloat,
+	b : GLfloat,
+]
+
 service game_renderer {
 	var program : gl_program
 	
 	// Attributes/uniforms
 	var vpos_pos : GLuint
+	var vcolor_pos : GLuint
 	var game_size_pos : GLuint
 	
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
+	var vertex_color = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
 	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
 
 	defn default = -> construct {
@@ -19,13 +27,12 @@ service game_renderer {
 		program.link()
 	
 		vpos_pos = program.get_attrib_location( "vertex_pos" )
+		vcolor_pos = program.get_attrib_location( "vertex_color" )
 		game_size_pos = program.get_uniform_location( "game_size" )
 		
-		vertex_data.push([0,0])
-		vertex_data.push([0,0])
-		vertex_data.push([0,0])
-		vertex_data.push([0,0])
-		
+		std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
+		std.println(["Locations: ", vpos_pos, " ", vcolor_pos, " ", game_size_pos])
+		std.println(["Size: ", GLfloat3.aligned_value_size, " ", GLfloat.aligned_value_size])
 	}
 
 	defn _push_box = ( pos : ipoint ) -> {
@@ -35,6 +42,11 @@ service game_renderer {
 		vertex_data.push( [ lossy(pos.x+1), lossy(pos.y) ] )
 		vertex_data.push( [ lossy(pos.x+1), lossy(pos.y+1) ] )
 		vertex_data.push( [ lossy(pos.x), lossy(pos.y+1) ] )
+		
+		vertex_color.push( [ 1,0,0.5] )
+		vertex_color.push( [ 1,0,0.5] )
+		vertex_color.push( [ 1,0,0.5] )
+		vertex_color.push( [ 1,0,0.5] )
 		
 		//TODO: efficiency by damned!  (don't update if not changed)
 		index_data.push(vdp + 0)
@@ -48,25 +60,37 @@ service game_renderer {
 	
 	defn render = ( state : shared game ) -> {
 		vertex_data.clear()
+		vertex_color.clear()
 		index_data.clear()
 		for i in std.range(0, state.body.get_size()) {
 			_push_box( state.body.get(i) )
 		}
 		_push_box( state.head_pos )
 		
+		_push_box( state.eat_me )
+		_push_box( [1,1] )
+ 		_push_box( [2,2] )
+		_push_box( [3,3] )
+		_push_box( [4,4] )
+		
 		index_data.bind_and_push( GL_STATIC_DRAW )
-		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 	
 		program.use()
-		
 		gl_enable_vertex_attrib_array( vpos_pos )
 		gl_vertex_attrib_pointer( vpos_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
+		
+		gl_enable_vertex_attrib_array( vcolor_pos )
+		gl_vertex_attrib_pointer( vcolor_pos, 3, GL_FLOAT, GL_FALSE, 3 * GLfloat.aligned_value_size, 0 )
+
+		vertex_color.bind_and_push( GL_DYNAMIC_DRAW )
+		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		
 		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLES, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )
 		
+		gl_disable_vertex_attrib_array( vcolor_pos )
 		gl_disable_vertex_attrib_array( vpos_pos )
 	}
 }

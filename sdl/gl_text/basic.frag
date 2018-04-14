@@ -6,5 +6,6 @@ uniform sampler2D tex;
 
 void main() { 
 	vec4 r =  texture2D(tex, texCoord);
-	LFragment = r * r[3];
+	LFragment = vec4(r.xyz*r.w,r.w);
+	//LFragment = vec4(r.w);
 }
