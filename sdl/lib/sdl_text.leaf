@@ -14,11 +14,13 @@ typedef SDL_TTF_Font : abi_pack [
 	
 service gl_text_texture {
 	var buffer : GLuint
+	var size : [ x : integer, y : integer ]
 
 	defn from_text = ( font : SDL_TTF_Font value_ptr, text : array｢char｣ ) -> construct {
 		var api_text = std.u8_encode(text)
 		
 		var sdl_tex = sdl_ttf_render_utf8_blended( font, api_text.raw_ptr, 0xFF00A0FA )
+		size = [ lossy(sdl_tex.w), lossy(sdl_tex.h) ]
 		//var sdl_tex = sdl_convert_surface_format( sdl_texa, SDL_PIXELFORMAT_RGBA8888, 0 )
 
 		//std.println(["TextSize: ", sdl_tex.w, "x", sdl_tex.h, " : ", sdl_tex.pixels])

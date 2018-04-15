@@ -12,27 +12,35 @@ typedef GLfloat3 : [
 service game_ui_renderer {
 	var program : gl_program
 	
+	//TODO: shouldn't need to be optional, initalized in `default`
 	var text_title : optional gl_text_texture
+	var text_score : optional gl_text_texture
 	
 	var vpos_pos : GLuint
 	var tc_pos : GLuint
 	var tex_pos : GLuint
+	var placement_pos : GLuint
 	
 	var vao : GLuint
 
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var vertex_texcoord = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
+
+	var last_score : integer  = 0
+	
+	var font : SDL_TTF_Font value_ptr
 	
 	defn default = -> construct {
 		var r = sdl_ttf_init()
 		std.println(["TTF: ", r])
-		var font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 64 )
+		font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 64 )
 		as_abi_ptr(font) == 0 then {
 			fail string_tag( "Font load failed" )
 		}
 	
 		text_title = gl_text_texture.from_text( font, "Wormies" )
+		text_score = gl_text_texture.from_text( font, "0" )
 		
 		program.attach_vertex_shader( "wormies/tex_block.vert" )
 		program.attach_fragment_shader( "wormies/tex_block.frag" )
@@ -41,16 +49,17 @@ service game_ui_renderer {
 		vpos_pos = program.get_attrib_location( "vertex_pos" )
 		tc_pos = program.get_attrib_location( "tex_coord" )
 		tex_pos = program.get_uniform_location( "tex" )
+		placement_pos = program.get_uniform_location( "placement" )
 		
 		vao = gl_gen_vertex_array()
 		gl_bind_vertex_array( vao )
 		gl_enable_vertex_attrib_array( vpos_pos )
 		gl_enable_vertex_attrib_array( tc_pos )
 		
-		vertex_data.push( [ -0.5, -0.5 ] )
-		vertex_data.push( [ 0.5, -0.5 ] )
-		vertex_data.push( [ 0.5, 0.5 ] )
-		vertex_data.push( [ -0.5, 0.5 ] )
+		vertex_data.push( [ 0, 0 ] )
+		vertex_data.push( [ 1, 0 ] )
+		vertex_data.push( [ 1, 1 ] )
+		vertex_data.push( [ 0, 1 ] )
 		vertex_data.bind_and_push( GL_STATIC_DRAW )
 		gl_vertex_attrib_pointer( vpos_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
 		
@@ -69,13 +78,27 @@ service game_ui_renderer {
 	}
 	
 	defn render = ( state : shared game ) -> {
+		state.score != last_score then {
+			text_score = gl_text_texture.from_text( font, std.integer_to_ascii(state.score) )
+			last_score = state.score
+		}
+		
 		program.use()
 		gl_bind_vertex_array( vao )
 		check_gl_error( "vertex_attrib" )
-		
+
+		_draw_text( getopt(text_title), [ 0, 0 ], 0.5 )
+		_draw_text( getopt(text_score), [ 0, 0.94 ], 0.1 )
+	}
+	
+	defn _draw_text =  ( text : gl_text_texture, pos : GLfloat2, height : GLfloat ) -> {
 		gl_active_texture(GL_TEXTURE0)
-		gl_bind_texture(GL_TEXTURE_2D, getopt(text_title).buffer)
+		gl_bind_texture(GL_TEXTURE_2D, text.buffer)
 		program.set_uniform( tex_pos, 0 )
+		
+		var src_sz = text.size
+		var width = lossy｢GLfloat｣(src_sz.x) / lossy｢GLfloat｣(src_sz.y) * height
+		program.set_uniform( placement_pos, pos.x - width/2, pos.y - height/2, width, height)
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLE_FAN, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )

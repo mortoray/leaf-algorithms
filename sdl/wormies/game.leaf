@@ -16,6 +16,7 @@ class game {
 	var body_length : integer = 4
 	var eat_me : ipoint
 	var alive : boolean = true
+	var score : integer 
 	
 	defn default = -> construct {
 		size = [ 30, 20 ]
@@ -36,6 +37,7 @@ class game {
 		head_pos.y = mod(head_pos.y + yoff, size.y)
 		
 		equals( head_pos, eat_me ) then {
+			score += 1
 			body_length += 2
 			set_next_eat_me()
 		}

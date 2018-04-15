@@ -190,6 +190,10 @@ defn gl_delete_vertex_array = ( buffer : GLuint ) -> {
 	location : GLint, v0 : GLint) -> () raw no_throw
 @import( "glProgramUniform2f" ) multi gl_program_uniform2f :  ( program :GLuint,
 	location : GLint, v0 : GLfloat, v2 : GLfloat) -> () raw no_throw
+@import( "glProgramUniform3f" ) multi gl_program_uniform3f :  ( program :GLuint,
+	location : GLint, v0 : GLfloat, v2 : GLfloat, v3 : GLfloat) -> () raw no_throw
+@import( "glProgramUniform4f" ) multi gl_program_uniform4f :  ( program :GLuint,
+	location : GLint, v0 : GLfloat, v2 : GLfloat, v3 : GLfloat, v4 : GLfloat) -> () raw no_throw
 
 @import( "glEnable" ) multi gl_enable : ( cap : GLenum ) -> () raw no_throw
 
