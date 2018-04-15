@@ -1,7 +1,11 @@
+//TODO: implement == on tuples
 typedef ipoint : [
 	x : integer,
 	y : integer,
 ]
+defn equals = ( a : ipoint, b : ipoint ) -> {
+	return a.x == b.x and a.y == b.y
+}
 
 class game {
 	var size : ipoint
@@ -11,17 +15,30 @@ class game {
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 4
 	var eat_me : ipoint
+	var alive : boolean = true
 	
 	defn default = -> construct {
 		size = [ 30, 20 ]
 		head_pos = [ 10, 7 ]
-		eat_me = [ 20, 13 ]
+		set_next_eat_me()
 	}
 	
-	defn move = ( xoff : integer, yoff  : integer ) -> {
+	defn set_next_eat_me = -> {
+		eat_me = [
+			rand_integer( 0, size.x ),
+			rand_integer( 0, size.y ),
+		]
+	}
+	
+	defn _move = ( xoff : integer, yoff  : integer ) -> {
 		body.add( head_pos )
 		head_pos.x = mod(head_pos.x + xoff, size.x)
 		head_pos.y = mod(head_pos.y + yoff, size.y)
+		
+		equals( head_pos, eat_me ) then {
+			body_length += 2
+			set_next_eat_me()
+		}
 		
 		body.get_size() > body_length then {
 			body.remove(0)
@@ -29,14 +46,32 @@ class game {
 	}
 	
 	defn step = -> {
+		alive else return
+		
 		req_dir.get_size() > 0 then {
 			dir = req_dir.get(0)
 			req_dir.remove(0)
 		}
-		move( dir.x, dir. y)
+		
+		dir.x == 0 and dir.y == 0 else {
+			_move( dir.x, dir. y)
+			_check_collision()
+		}
 	}
 	
 	defn req_move = ( xoff : integer, yoff : integer ) -> {
 		req_dir.add( [ xoff, yoff ] )
+	}
+	
+	defn _check_collision = -> {
+		_does_collide() else return
+		
+		alive = false
+	}
+	
+	defn _does_collide = -> ( : boolean ) {
+		return has( body.find( (pt) -> {
+			return equals( pt, head_pos )
+		}))
 	}
 }

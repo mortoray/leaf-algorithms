@@ -69,10 +69,11 @@ service game_renderer {
 		vertex_data.clear()
 		vertex_color.clear()
 		index_data.clear()
+		var body_color : GLfloat3 = state.alive ? [0.5,0.7,0] | [0.8,0,0]
 		for i in std.range(0, state.body.get_size()) {
-			_push_box( state.body.get(i), [0.5,0.7,0] )
+			_push_box( state.body.get(i), body_color )
 		}
-		_push_box( state.head_pos, [0.5,0.7,0] )
+		_push_box( state.head_pos, body_color )
 		
 		_push_box( state.eat_me, [0.9,0.2,0.6] )
 		

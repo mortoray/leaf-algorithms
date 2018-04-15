@@ -1,0 +1,19 @@
+var rand_seed : binary = 1
+literal rand_max = 32767
+
+defn rand_next_float = -> {
+	return lossy｢float｣(_rand_step()) /  rand_max
+}
+
+defn _rand_step = -> ( : binary ) {
+	rand_seed = rand_seed * 1103515245 + 12345
+	//TODO: I think modulo doens't support "binary"
+	//return mod( rand_seed/65536, rand_max )
+	var q : binary = rand_seed / 65536
+	return lossy｢binary｣(mod( lossy｢integer｣(q), rand_max ))
+}
+
+defn rand_integer = ( lo : integer, xhi : integer ) -> {
+	var range = xhi - lo
+	return mod( lossy｢integer｣(_rand_step()), range ) + lo
+}

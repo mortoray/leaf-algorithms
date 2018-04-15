@@ -10,7 +10,7 @@ var main = -> {
 }
 
 var run = -> {
-	var app = sdl_gl_window("Wormies", 600, 450 )
+	var app = sdl_gl_window("Wormies", 800, 600 )
 	
 	var state : shared game
 	
@@ -46,9 +46,9 @@ var run = -> {
 		var cur_ticks = sdl_get_ticks()
 		elapsed_ticks += cur_ticks - last_ticks
 		last_ticks = cur_ticks
-		while elapsed_ticks > 250 {
+		while elapsed_ticks > 150 {
 			state.step()
-			elapsed_ticks -= 250
+			elapsed_ticks -= 150
 		}
 		
 		gl_clear_color(0.1,0.1,0.1,1)
