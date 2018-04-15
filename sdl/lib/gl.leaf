@@ -54,6 +54,13 @@ literal GL_TEXTURE0 = 0x84C0
 literal GL_TEXTURE_MAG_FILTER = 0x2800
 literal GL_TEXTURE_MIN_FILTER = 0x2801
 literal GL_LINEAR = 0x2601
+literal GL_BLEND = 0x0BE2
+literal GL_SRC_ALPHA = 0x0302
+literal GL_ONE_MINUS_SRC_ALPHA = 0x0303
+literal GL_TEXTURE_WRAP_S = 0x2802
+literal GL_TEXTURE_WRAP_T = 0x2803
+literal GL_REPEAT = 0x2901
+literal GL_CLAMP_TO_EDGE = 0x812F
 
 @import( "glGetError" ) multi gl_get_error : ( ) -> ( : GLuint )  raw no_throw
 
@@ -183,3 +190,7 @@ defn gl_delete_vertex_array = ( buffer : GLuint ) -> {
 	location : GLint, v0 : GLint) -> () raw no_throw
 @import( "glProgramUniform2f" ) multi gl_program_uniform2f :  ( program :GLuint,
 	location : GLint, v0 : GLfloat, v2 : GLfloat) -> () raw no_throw
+
+@import( "glEnable" ) multi gl_enable : ( cap : GLenum ) -> () raw no_throw
+
+@import( "glBlendFunc" ) multi gl_blend_func : ( sfactor : GLenum, dfactor : GLenum ) -> () raw no_throw

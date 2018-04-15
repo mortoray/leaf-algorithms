@@ -8,7 +8,7 @@ typedef SDL_TTF_Font : abi_pack [
 
 @import( "TTF_CloseFont" ) multi sdl_ttf_close_font : ( font : SDL_TTF_Font value_ptr ) -> () raw no_throw
 
-@import ( "TTF_RenderText_Blended" ) multi sdl_ttf_render_utf8_blended : ( font : SDL_TTF_Font value_ptr,
+@import ( "TTF_RenderUTF8_Blended" ) multi sdl_ttf_render_utf8_blended : ( font : SDL_TTF_Font value_ptr,
 	text : raw_array｢abi_char｣ value_ptr, fg : binary 32bit /*SDL_Color*/ ) -> ( : SDL_Surface value_ptr) raw no_throw
 
 	
@@ -18,11 +18,11 @@ service gl_text_texture {
 	defn from_text = ( font : SDL_TTF_Font value_ptr, text : array｢char｣ ) -> construct {
 		var api_text = std.u8_encode(text)
 		
-		var sdl_tex = sdl_ttf_render_utf8_blended( font, api_text.raw_ptr, 0xFF0080AA )
+		var sdl_tex = sdl_ttf_render_utf8_blended( font, api_text.raw_ptr, 0xFF00A0FA )
 		//var sdl_tex = sdl_convert_surface_format( sdl_texa, SDL_PIXELFORMAT_RGBA8888, 0 )
 
-		std.println(["TextSize: ", sdl_tex.w, "x", sdl_tex.h, " : ", sdl_tex.pixels])
-		std.println(["Format: ", sdl_tex.format.bits_per_pixel, " ", sdl_tex.format.amask])
+		//std.println(["TextSize: ", sdl_tex.w, "x", sdl_tex.h, " : ", sdl_tex.pixels])
+		//std.println(["Format: ", sdl_tex.format.bits_per_pixel, " ", sdl_tex.format.amask])
 		
 		var buffers = array｢GLuint｣(1)
 		gl_gen_textures( 1, buffers.raw_ptr )
@@ -36,6 +36,8 @@ service gl_text_texture {
 	
 		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+		gl_tex_parameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 		
 		this.buffer = buffers#0
 		sdl_free_surface( sdl_tex )
@@ -48,4 +50,3 @@ service gl_text_texture {
 		gl_delete_textures( 1, buffers.raw_ptr )
 	}
 }
-	

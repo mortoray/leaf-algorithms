@@ -20,6 +20,9 @@ service sdl_gl_window {
 		check_sdl_ptr( "gl_create_context", as_abi_ptr(gl_ctx) )
 		
 		ignore sdl_gl_set_swap_interval( 1 )
+		
+		gl_enable( GL_BLEND )
+		gl_blend_func( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
 	}
 	
 	defn destroy = -> {

@@ -19,7 +19,7 @@ var run = -> {
 
 	var r = sdl_ttf_init()
 	std.println(["TTF: ", r])
-	var font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 32 )
+	var font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 64 )
 	as_abi_ptr(font) == 0 then {
 		std.println(["Load failed"])
 		return
@@ -53,13 +53,13 @@ var run = -> {
 	index_data.bind_and_push( GL_STATIC_DRAW )
 	
 	var tex_coord = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
-	tex_coord.push( [0,0] )
-	tex_coord.push( [1,0] )
-	tex_coord.push( [1,1] )
 	tex_coord.push( [0,1] )
+	tex_coord.push( [1,1] )
+	tex_coord.push( [1,0] )
+	tex_coord.push( [0,0] )
 	tex_coord.bind_and_push( GL_STATIC_DRAW )
 	
-	gl_clear_color(0,0.5,0.5,1)
+	gl_clear_color(0.2,0.3,0.2,1)
 	
  	var run = true
 	while run {

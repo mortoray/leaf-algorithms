@@ -18,7 +18,7 @@ An OpenGL implementation is also required. I haven't thought too much about vers
 
 In the root repo directory:
 
-	leaf --library SDL2 --library SDL2_image --library GL lib wormies
+	leaf --library SDL2 --library SDL2_image --library SDL2_ttf --library GL lib wormies
 	
 	
 
