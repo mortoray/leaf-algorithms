@@ -24,6 +24,8 @@ class game {
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 10
 	var eat_me : ipoint
+	var chase_me : ipoint
+	var chase_me_dir : ipoint
 	var alive : boolean = true
 	var score : integer 
 	
@@ -31,14 +33,28 @@ class game {
 		size = [ 30, 20 ]
 		head_pos = [ 10, 7 ]
 		body.add( head_pos )
-		set_next_eat_me()
+		_set_next_eat_me()
+		_set_next_chase_me()
 	}
 	
-	defn set_next_eat_me = -> {
-		eat_me = [
+	defn _get_random_eat_loc = -> ( : ipoint ) {
+		return [
 			rand_integer( 0, size.x ),
 			rand_integer( 0, size.y ),
 		]
+	}
+	defn _set_next_eat_me = -> {
+		eat_me = _get_random_eat_loc()
+	}
+	defn _set_next_chase_me = -> {
+		chase_me = _get_random_eat_loc()
+		var dir = rand_integer( 0, 4 )
+		chase_me_dir = select(
+			dir == 0 ? [1,0],
+			dir == 1 ? [-1,0],
+			dir == 2 ? [0,1],
+			[0,-1],
+		)
 	}
 	
 	defn _move = ( xoff : integer, yoff  : integer ) -> {
@@ -49,7 +65,18 @@ class game {
 		equals( head_pos, eat_me ) then {
 			score += 1
 			body_length += 2
-			set_next_eat_me()
+			_set_next_eat_me()
+		}
+		equals( head_pos, chase_me ) then {
+			score += 2
+			body_length += 3
+			_set_next_chase_me()
+		} else {
+			body.get_size() > 1 and equals( body.get(body.get_size()-2), chase_me ) then {
+				score += 2
+				body_length += 3
+				_set_next_chase_me()
+			}
 		}
 		
 		body.get_size() > body_length then {
@@ -73,6 +100,11 @@ class game {
 			_move( dir.x, dir. y)
 			_check_collision()
 		}
+		
+		chase_me = [ 	
+			mod( chase_me.x + chase_me_dir.x, size.x ),
+			mod( chase_me.y + chase_me_dir.y, size.y ),
+		]
 	}
 	
 	defn req_move = ( xoff : integer, yoff : integer ) -> {

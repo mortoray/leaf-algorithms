@@ -346,6 +346,7 @@ service game_field_renderer {
 		}
 		
 		_push_box( state.eat_me, [0.9,0.2,0.6] )
+		_push_box( state.chase_me, [0.9,0.6,0.2] )
 	
 		program.use()
 		gl_bind_vertex_array( vao )
