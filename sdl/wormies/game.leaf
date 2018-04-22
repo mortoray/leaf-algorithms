@@ -16,6 +16,12 @@ defn add = ( a : ipoint, b : ipoint ) -> ( : ipoint ) {
 	return [ a.x + b.x, a.y + b.y ]
 }
 
+typedef game_dot : [
+	pos : ipoint,
+	prev_pos : ipoint,
+	dir : ipoint,
+]
+
 class game {
 	var size : ipoint
 	var head_pos : ipoint
@@ -24,8 +30,9 @@ class game {
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 10
 	var eat_me : ipoint
-	var chase_me : ipoint
-	var chase_me_dir : ipoint
+	
+	var chase_me : game_dot
+
 	var alive : boolean = true
 	var score : integer 
 	
@@ -47,14 +54,22 @@ class game {
 		eat_me = _get_random_eat_loc()
 	}
 	defn _set_next_chase_me = -> {
-		chase_me = _get_random_eat_loc()
+		chase_me.pos = _get_random_eat_loc()
+		chase_me.prev_pos = chase_me.pos
 		var dir = rand_integer( 0, 4 )
-		chase_me_dir = select(
+		chase_me.dir = select(
 			dir == 0 ? [1,0],
 			dir == 1 ? [-1,0],
 			dir == 2 ? [0,1],
 			[0,-1],
 		)
+	}
+	
+	defn _eaten = ( what : game_dot ) -> {
+		equals( head_pos, what.pos ) then return true
+		equals( head_pos, what.prev_pos ) then return true
+		//body.get_size() > 1 and equals( body.get(body.get_size()-2), what.pos ) then return true
+		return false
 	}
 	
 	defn _move = ( xoff : integer, yoff  : integer ) -> {
@@ -67,16 +82,10 @@ class game {
 			body_length += 2
 			_set_next_eat_me()
 		}
-		equals( head_pos, chase_me ) then {
+		_eaten( chase_me ) then {
 			score += 2
 			body_length += 3
 			_set_next_chase_me()
-		} else {
-			body.get_size() > 1 and equals( body.get(body.get_size()-2), chase_me ) then {
-				score += 2
-				body_length += 3
-				_set_next_chase_me()
-			}
 		}
 		
 		body.get_size() > body_length then {
@@ -101,10 +110,17 @@ class game {
 			_check_collision()
 		}
 		
-		chase_me = [ 	
-			mod( chase_me.x + chase_me_dir.x, size.x ),
-			mod( chase_me.y + chase_me_dir.y, size.y ),
+		chase_me = _step_dot( chase_me )
+	}
+	
+	defn _step_dot = ( what : game_dot ) -> ( : game_dot ) {
+		var dot = what
+		dot.prev_pos = dot.pos
+		dot.pos = [
+			mod( dot.pos.x + dot.dir.x, size.x ),
+			mod( dot.pos.y + dot.dir.y, size.y ),
 		]
+		return dot
 	}
 	
 	defn req_move = ( xoff : integer, yoff : integer ) -> {
