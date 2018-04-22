@@ -1,13 +1,92 @@
+service game_renderer {
+	var ui : game_ui_renderer
+	var field : game_field_renderer
+	
+	defn render = ( state : shared game, partial_time : float ) -> {
+ 		field.render( state, partial_time )
+ 		ui.render( state )
+	}
+}
+
+
 typedef GLfloat2 : [
 	x : GLfloat,
 	y : GLfloat,
 ]
+defn sub = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
+	return [ a.x - b.x, a.y - b.y ]
+}
+defn mul = ( a : GLfloat2, b : float ) -> ( : GLfloat2 ) {
+	return [ lossy(a.x * b), lossy(a.y * b) ]
+}
+defn add = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
+	return [ a.x + b.x, a.y + b.y ]
+}
+defn GLfloat2_from = ( a : ipoint ) -> ( : GLfloat2 ) {
+	return [ lossy(a.x), lossy(a.y) ]
+}
+defn normalize = ( a : GLfloat2 ) -> ( : GLfloat2 ) {
+	var len = math.pow(a.x*a.x + a.y*a.y, 0.5)
+	return [ lossy(a.x / len), lossy(a.y / len) ]
+}
+
+//limits to +/-1 on either axis assuming a wrap
+defn wrap_normal = ( a : ipoint ) -> ( : ipoint ) {
+	return [
+		a.x < -1 ? 1 | (a.x > 1 ? -1 | a.x),
+		a.y < -1 ? 1 | (a.y > 1 ? -1 | a.y)]
+}
 
 typedef GLfloat3 : [
 	r : GLfloat,
 	g : GLfloat,
 	b : GLfloat,
 ]
+
+defn lossy_glfloat3 = ( v ) -> ( : GLfloat3 ) {
+	return [ lossy(v#0), lossy(v#1), lossy(v#2) ]
+}
+
+defn clamp = param｢T｣( a : T, mn : T, mx : T ) -> ( : T ) {
+	return a < mn ? mn | (a > mx ? mx | a)
+}
+
+//  Assume 0 <=  a,b <= 2*pi
+defn close_angle = ( a : float, b : float ) -> {
+	var diff = math.abs(a - b)
+	diff < 0.1 then return true
+	diff > (2*math.pi-0.1) then return true
+	return false
+}
+//  0 when equal, 1 at 90 (basically dot-product like)
+defn angle_offset = ( a : float, b : float ) -> {
+	var diff = math.abs(a - b)
+	diff > math.pi then diff = 2*math.pi - diff
+
+	return clamp｢float｣( diff / (math.pi/2), 0, 1 )
+}
+defn lerp = ( a : GLfloat3, b : GLfloat3, t : float ) -> {
+	return [
+		(b.r - a.r) * t + a.r,
+		(b.g - a.g) * t + a.g,
+		(b.b - a.b) * t + a.b ]
+}
+
+defn max = (a,b) -> {
+	return a < b ? b | a
+}
+defn min = (a,b) -> {
+	return a < b ? a | b
+}
+
+//assuming segments are beside each other
+//from a -> b
+defn segment_point_angle = ( a : ipoint, b : ipoint ) -> {
+	b.x > a.x then return 0
+	b.x < a.x then return math.pi
+	b.y > a.y then return math.pi/2
+	return 3*math.pi/2
+}
 
 service game_ui_renderer {
 	var program : gl_program
@@ -105,17 +184,19 @@ service game_ui_renderer {
 	}
 }
 
-service game_renderer {
-	var program : gl_program
-	var ui : game_ui_renderer
+
+service game_field_renderer {
+ 	var program : gl_program
 	
 	// Attributes/uniforms
 	var vpos_pos : GLuint
 	var vcolor_pos : GLuint
+	var vnorm_pos : GLuint
 	var game_size_pos : GLuint
 	
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var vertex_color = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
+	var vertex_norm = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
 	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
 	
 	var vao : GLuint
@@ -127,6 +208,7 @@ service game_renderer {
 	
 		vpos_pos = program.get_attrib_location( "vertex_pos" )
 		vcolor_pos = program.get_attrib_location( "vertex_color" )
+		vnorm_pos = program.get_attrib_location( "vertex_norm" )
 		game_size_pos = program.get_uniform_location( "game_size" )
 		
 		std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
@@ -137,12 +219,16 @@ service game_renderer {
 		gl_bind_vertex_array( vao )
 		gl_enable_vertex_attrib_array( vpos_pos )
 		gl_enable_vertex_attrib_array( vcolor_pos )
+		gl_enable_vertex_attrib_array( vnorm_pos )
 		
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		gl_vertex_attrib_pointer( vpos_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
 		
 		vertex_color.bind_and_push( GL_DYNAMIC_DRAW )
 		gl_vertex_attrib_pointer( vcolor_pos, 3, GL_FLOAT, GL_FALSE, 3 * GLfloat.aligned_value_size, 0 )
+		
+		vertex_norm.bind_and_push( GL_DYNAMIC_DRAW )
+		gl_vertex_attrib_pointer( vnorm_pos, 3, GL_FLOAT, GL_FALSE, 3 * GLfloat.aligned_value_size, 0 )
 	}
 
 	defn _push_box = ( pos : ipoint, color : GLfloat3 ) -> {
@@ -158,6 +244,11 @@ service game_renderer {
 		vertex_color.push( color )
 		vertex_color.push( color )
 		
+		vertex_norm.push( [ -1, -1, 1 ] )
+		vertex_norm.push( [ 1, -1, 1 ] )
+		vertex_norm.push( [ 1, 1, 1 ] )
+		vertex_norm.push( [ -1, 1, 1 ] )
+		
 		//TODO: efficiency by damned!  (don't update if not changed)
 		index_data.push(vdp + 0)
 		index_data.push(vdp + 1)
@@ -168,21 +259,91 @@ service game_renderer {
 		index_data.push(vdp + 3)
 	}
 	
-	defn render = ( state : shared game ) -> {
-		_render_game( state )
-		ui.render( state )
+	//TODO: if specifying `float : partial` then untrackable type error
+	defn _push_body_segment = ( pos : ipoint, color : GLfloat3,
+		prev_seg : optional ipoint, next_seg : optional ipoint, partial : float ) -> {
+
+		var base : GLfloat2 = [ lossy｢GLfloat｣(pos.x) + 0.5, lossy｢GLfloat｣(pos.y) + 0.5 ]
+		var dir : GLfloat2 = [0,0]
+		
+		var opt_prev_angle : optional float
+		has(prev_seg) then {
+			opt_prev_angle = segment_point_angle(pos, getopt(prev_seg))
+			dir = GLfloat2_from( wrap_normal(getopt(prev_seg) - pos) )
+		}
+		var opt_next_angle : optional float
+		has(next_seg) then {
+			opt_next_angle = segment_point_angle(pos, getopt(next_seg))
+			dir = GLfloat2_from( wrap_normal(getopt(next_seg) - pos) )
+		}
+		
+		base += dir * (1-partial) * 0.5
+		
+		var vdp = lossy｢GLuint｣(vertex_data.get_size())
+		
+		vertex_data.push( base ) //vdp#0 == base_pt
+		vertex_color.push( color )
+		vertex_norm.push( [ 0, 0, 1 ] )
+		
+ 		var steps = 32
+		for step in std.range(0,steps) {
+ 			vertex_color.push(color)
+ 			
+ 			//TODO: missing one lossy｢float｣ caused error without source
+ 			var angle = 2*math.pi * (lossy｢float｣(step)/lossy｢float｣(steps));
+ 			vertex_data.push( [
+				//TODO: missing ｢float｣ on clamp had odd issue
+ 				lossy(base.x + clamp｢float｣( math.cos( angle )*0.55*partial, -0.5, 0.5) ),
+ 				lossy(base.y + clamp｢float｣( math.sin( angle )*0.55*partial, -0.5, 0.5) ),
+ 			])
+ 			
+ 			var a_norm : GLfloat3 = [ 
+				lossy｢GLfloat｣(math.cos(angle)), 
+				lossy｢GLfloat｣(math.sin(angle)), 
+				0 ]
+			var b_norm : GLfloat3 = [ 0, 0, 1 ]
+ 			var ao : float = 1
+			has(opt_prev_angle) then {
+				ao = min( ao, angle_offset( angle, getopt(opt_prev_angle) ) )
+			}
+			has(opt_next_angle) then {
+				ao = min( ao, angle_offset( angle, getopt(opt_next_angle) ) )
+			}
+				
+			//TODO: should lossy work on an entire tuple?
+			vertex_norm.push( lossy_glfloat3( lerp( b_norm, a_norm, math.pow(ao,2) ) ) )
+		}
+		
+		for step in std.range(0, steps) {
+			index_data.push( vdp + 0 )
+			index_data.push( vdp + 1 + lossy(step) )
+			index_data.push( vdp + 1 + lossy(mod(step + 1, steps)) )
+		}
 	}
-	
-	defn _render_game = ( state : shared game ) -> {
+ 	
+	defn render = ( state : shared game, partial_time : float ) -> {
 		vertex_data.clear()
 		vertex_color.clear()
+		vertex_norm.clear()
 		index_data.clear()
+		
+		defn get_body_if_valid = ( x : integer ) -> ( : optional ipoint ) {
+			x >= 0 and x < state.body.get_size() then return state.body.get(x)
+		}
 		
 		var body_color : GLfloat3 = state.alive ? [0.5,0.7,0] | [0.8,0,0]
 		for i in std.range(0, state.body.get_size()) {
-			_push_box( state.body.get(i), body_color )
+			//TODO: go unification wrong, produced compile error
+			//var partial = i == 0 ? (1 - partial_time) | (i == state.body.get_size()+1 ? partial_time | 1)
+			var partial : float = 1
+			i == 0 and state.is_body_full() then partial = 1 - partial_time
+			i == state.body.get_size()-1 then partial = partial_time
+			
+			_push_body_segment( state.body.get(i), body_color, 
+				get_body_if_valid(i-1), 
+				get_body_if_valid(i+1),
+				partial)
 		}
-		_push_box( state.head_pos, body_color )
 		
 		_push_box( state.eat_me, [0.9,0.2,0.6] )
 	
@@ -192,6 +353,7 @@ service game_renderer {
 		index_data.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_color.bind_and_push( GL_DYNAMIC_DRAW )
+		vertex_norm.bind_and_push( GL_DYNAMIC_DRAW )
 		
 		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
 		

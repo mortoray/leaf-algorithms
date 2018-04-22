@@ -30,6 +30,8 @@ literal SDLK_UP = 0x40000052
 literal SDLK_DOWN = 0x40000051
 literal SDLK_RIGHT = 0x4000004f
 literal SDLK_LEFT = 0x40000050
+literal SDLK_SPACE = 0x20 //tODO: SOMETHING WRONG!!!
+literal SDLK_PAUSE = 0x40000048
 
 //TODO: accidental abi_intr caused unresolved-typing
 @import( "SDL_PollEvent" ) multi sdl_poll_event : ( event : SDL_Event value_ptr ) -> ( : abi_int ) raw no_throw

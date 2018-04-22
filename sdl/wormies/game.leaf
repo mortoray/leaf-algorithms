@@ -6,6 +6,15 @@ typedef ipoint : [
 defn equals = ( a : ipoint, b : ipoint ) -> {
 	return a.x == b.x and a.y == b.y
 }
+defn sub = ( a : ipoint, b : ipoint ) -> ( : ipoint ) {
+	return [ a.x - b.x, a.y - b.y ]
+}
+defn mul = ( a : ipoint, b : integer ) -> ( : ipoint ) {
+	return [ a.x * b, a.y * b ]
+}
+defn add = ( a : ipoint, b : ipoint ) -> ( : ipoint ) {
+	return [ a.x + b.x, a.y + b.y ]
+}
 
 class game {
 	var size : ipoint
@@ -13,7 +22,7 @@ class game {
 	var dir : ipoint
 	var body : collections.vector｢ipoint｣
 	var req_dir : collections.vector｢ipoint｣
-	var body_length : integer = 4
+	var body_length : integer = 10
 	var eat_me : ipoint
 	var alive : boolean = true
 	var score : integer 
@@ -21,6 +30,7 @@ class game {
 	defn default = -> construct {
 		size = [ 30, 20 ]
 		head_pos = [ 10, 7 ]
+		body.add( head_pos )
 		set_next_eat_me()
 	}
 	
@@ -32,9 +42,9 @@ class game {
 	}
 	
 	defn _move = ( xoff : integer, yoff  : integer ) -> {
-		body.add( head_pos )
 		head_pos.x = mod(head_pos.x + xoff, size.x)
 		head_pos.y = mod(head_pos.y + yoff, size.y)
+		body.add( head_pos )
 		
 		equals( head_pos, eat_me ) then {
 			score += 1
@@ -45,6 +55,10 @@ class game {
 		body.get_size() > body_length then {
 			body.remove(0)
 		}
+	}
+	
+	defn is_body_full = -> {
+		return body.get_size() >= body_length
 	}
 	
 	defn step = -> {
@@ -72,8 +86,13 @@ class game {
 	}
 	
 	defn _does_collide = -> ( : boolean ) {
-		return has( body.find( (pt) -> {
+		var at = body.find( (pt) -> {
 			return equals( pt, head_pos )
-		}))
+		})
+		//TODO: pattern matching somehow
+		has(at) then {
+			return getopt(at) != body.get_size()-1
+		}
+		return false
 	}
 }

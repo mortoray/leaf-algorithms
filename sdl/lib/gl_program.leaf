@@ -41,7 +41,9 @@ service gl_program {
 		var vpos = gl_get_attrib_location( program, std.u8_encode(name).raw_ptr )
 		check_gl_error( "get_attrib" )
 		vpos == -1 then {
-			fail string_tag( "get_attrib" )
+			//TODO: this should be part of the failure, not printed
+			std.println(["Cannot get attribute: ", name])
+			fail string_tag( "get_attrib_location" )
 		}
 		return vpos
 	}
