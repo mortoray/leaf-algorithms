@@ -27,3 +27,5 @@ In the root repo directory:
 ## Resources
 
 https://pixabay.com/en/background-texture-leaves-nature-1507139/
+https://pixabay.com/en/fruit-peach-apple-grapes-cherry-3244134/
+https://pixabay.com/en/skinned-snake-skin-scale-snake-394384/

@@ -195,6 +195,28 @@ defn gl_delete_vertex_array = ( buffer : GLuint ) -> {
 @import( "glProgramUniform4f" ) multi gl_program_uniform4f :  ( program :GLuint,
 	location : GLint, v0 : GLfloat, v2 : GLfloat, v3 : GLfloat, v4 : GLfloat) -> () raw no_throw
 
+typedef GLmat4 : abi_pack [
+	m11 : GLfloat,
+	m12 : GLfloat,
+	m13 : GLfloat,
+	m14 : GLfloat,
+	m21 : GLfloat,
+	m22 : GLfloat,
+	m23 : GLfloat,
+	m24 : GLfloat,
+	m31 : GLfloat,
+	m32 : GLfloat,
+	m33 : GLfloat,
+	m34 : GLfloat,
+	m41 : GLfloat,
+	m42 : GLfloat,
+	m43 : GLfloat,
+	m44 : GLfloat,
+]
+	
+@import( "glProgramUniformMatrix4fv" ) multi gl_program_uniform_matrix_4fv : ( program : GLuint,
+	location : GLint, count : GLsizei, transpose : GLboolean, value : GLmat4 value_ptr ) -> () raw no_throw
+
 @import( "glEnable" ) multi gl_enable : ( cap : GLenum ) -> () raw no_throw
 
 @import( "glBlendFunc" ) multi gl_blend_func : ( sfactor : GLenum, dfactor : GLenum ) -> () raw no_throw

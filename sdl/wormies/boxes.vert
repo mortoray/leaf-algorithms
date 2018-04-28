@@ -1,5 +1,6 @@
 #version 130
 uniform vec2 game_size;
+uniform mat4 transform;
 
 in vec2 vertex_pos; 
 in vec3 vertex_color;
@@ -15,7 +16,7 @@ void main() {
 	frag_norm = vertex_norm;
 	frag_tex_coord = vertex_tex_coord;
 	
-	gl_Position = vec4( 
+	gl_Position = transform * vec4( 
 		(vertex_pos.x / game_size.x)*2 - 1, 
 		(vertex_pos.y / game_size.y)*2 - 1, 0, 1 ); 
 }

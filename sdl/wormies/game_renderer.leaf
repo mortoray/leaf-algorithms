@@ -31,6 +31,27 @@ defn normalize = ( a : GLfloat2 ) -> ( : GLfloat2 ) {
 	return [ lossy(a.x / len), lossy(a.y / len) ]
 }
 
+defn identity_mat4 = -> ( : GLmat4 ) {
+	var m : GLmat4
+	m.m11 = 1
+	m.m12 = 0
+	m.m13 = 0
+	m.m14 = 0
+	m.m21 = 0
+	m.m22 = 1
+	m.m23 = 0
+	m.m24 = 0
+	m.m31 = 0
+	m.m32 = 0
+	m.m33 = 1
+	m.m34 = 0
+	m.m41 = 0
+	m.m42 = 0
+	m.m43 = 0
+	m.m44 = 1
+	return m
+}
+
 //limits to +/-1 on either axis assuming a wrap
 defn wrap_normal = ( a : ipoint ) -> ( : ipoint ) {
 	return [
@@ -167,7 +188,7 @@ service game_ui_renderer {
 		gl_bind_vertex_array( vao )
 		check_gl_error( "vertex_attrib" )
 
-		_draw_text( getopt(text_title), [ 0, 0 ], 0.5 )
+		_draw_text( getopt(text_title), [ -0.83, 0.95 ], 0.10 )
 		_draw_text( getopt(text_score), [ 0, 0.94 ], 0.1 )
 	}
 	
@@ -196,6 +217,7 @@ service game_field_renderer {
 	var tc_pos : GLuint
 	var game_size_pos : GLuint
 	var texture_pos : GLuint
+	var transform_pos : GLuint
 	
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var vertex_color = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
@@ -205,7 +227,8 @@ service game_field_renderer {
 	
 	var vao : GLuint
 		
-	var background : optional gl_texture
+	var background_tex : optional gl_texture
+	var foreground_tex : optional gl_texture
 
 	defn default = -> construct {
 		program.attach_vertex_shader( "wormies/boxes.vert" )
@@ -213,7 +236,8 @@ service game_field_renderer {
 		program.link()
 	
 		//TODO: wrong file name crashes!
-		background = gl_texture.from_file( "wormies/assets/background.jpg" )
+		background_tex = gl_texture.from_file( "wormies/assets/background.jpg" )
+		foreground_tex = gl_texture.from_file( "wormies/assets/foreground_sprites.png" )
 		
 		vpos_pos = program.get_attrib_location( "vertex_pos" )
 		vcolor_pos = program.get_attrib_location( "vertex_color" )
@@ -221,6 +245,7 @@ service game_field_renderer {
 		tc_pos = program.get_attrib_location( "vertex_tex_coord" )
 		game_size_pos = program.get_uniform_location( "game_size" )
 		texture_pos = program.get_uniform_location( "tex" )
+		transform_pos = program.get_uniform_location( "transform" )
 		
 		std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
 		std.println(["Locations: ", vpos_pos, " ", vcolor_pos, " ", game_size_pos])
@@ -246,23 +271,24 @@ service game_field_renderer {
 		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
 	}
 
-	defn _push_dot = ( state : game, dot : game_dot, color : GLfloat3, partial_time : float ) -> {
+	defn _push_dot = ( state : game, dot : game_dot, color : GLfloat3, partial_time : float,
+		sprite : [ : integer, : integer ] ) -> {
 		var chase_dir = wrap_normal( dot.pos - dot.prev_pos)
 		var ct = math.sin(partial_time * math.pi/2)
 		
 		_push_box( GLfloat2_from(dot.prev_pos)  + GLfloat2_from(chase_dir) * ct, color,
-			dot.age < 5 ? lossy｢float｣(dot.age)/5 + partial_time/5 | 1)
+			dot.age < 5 ? lossy｢float｣(dot.age)/5 + partial_time/5 | 1, sprite)
 	}
 	
-	defn _push_box = ( pos : GLfloat2, color : GLfloat3, partial_ : float ) -> {
+	defn _push_box = ( pos : GLfloat2, color : GLfloat3, partial_ : float, sprite : [ : integer, : integer ] ) -> {
 		var partial = lossy｢GLfloat｣(partial_)
 		var top_left : GLfloat2 = [ pos.x, pos.y ]
 		var sz : GLfloat = partial
 		
-		_push_rect( top_left, [ sz, sz ], color )
+		_push_rect( top_left, [ sz, sz ], color, sprite, 5 )
 	}
 		
-	defn _push_rect = ( pos : GLfloat2, size : GLfloat2, color : GLfloat3 ) -> {
+	defn _push_rect = ( pos : GLfloat2, size : GLfloat2, color : GLfloat3, sprite : [ : integer, : integer ], sprite_scale : integer ) -> {
 		var vdp = lossy｢GLuint｣(vertex_data.get_size())
 		
 		vertex_data.push( [ pos.x, pos.y ] )
@@ -280,10 +306,14 @@ service game_field_renderer {
 		vertex_norm.push( [ 1, 1, 1 ] )
 		vertex_norm.push( [ -1, 1, 1 ] )
 		
-		vertex_tex_coord.push( [ 0, 0 ] )
-		vertex_tex_coord.push( [ 1, 0 ] )
-		vertex_tex_coord.push( [ 1, 1 ] )
-		vertex_tex_coord.push( [ 0, 1 ] )
+		var sprite_scale_f : GLfloat = 1/lossy｢GLfloat｣(sprite_scale)
+		var sx = lossy｢GLfloat｣(sprite#0) * sprite_scale_f
+		var sy = lossy｢GLfloat｣(sprite#1) * sprite_scale_f
+		
+		vertex_tex_coord.push( [ sx, sy+sprite_scale_f ] )
+		vertex_tex_coord.push( [ sx+sprite_scale_f, sy+sprite_scale_f ] )
+		vertex_tex_coord.push( [ sx+sprite_scale_f, sy ] )
+		vertex_tex_coord.push( [ sx, sy ] )
 		
 		//TODO: efficiency by damned!  (don't update if not changed)
 		index_data.push(vdp + 0)
@@ -320,7 +350,7 @@ service game_field_renderer {
 		vertex_data.push( base ) //vdp#0 == base_pt
 		vertex_color.push( color )
 		vertex_norm.push( [ 0, 0, 1 ] )
-		vertex_tex_coord.push( [ 0.5, 0.5 ] )
+		vertex_tex_coord.push( [ 0.9, 0.9 ] )
 		
  		var steps = 32
 		for step in std.range(0,steps) {
@@ -335,7 +365,7 @@ service game_field_renderer {
  				lossy(base.x + rel_x ),
  				lossy(base.y + rel_y ),
  			])
- 			vertex_tex_coord.push( [ lossy(rel_x), lossy(rel_y) ] )
+ 			vertex_tex_coord.push( [ lossy(0.9+rel_x*0.1), lossy(0.9+rel_y*0.1) ] )
  			
  			var a_norm : GLfloat3 = [ 
 				lossy｢GLfloat｣(math.cos(angle)), 
@@ -360,16 +390,38 @@ service game_field_renderer {
 			index_data.push( vdp + 1 + lossy(mod(step + 1, steps)) )
 		}
 	}
- 	
-	defn render = ( state : shared game, partial_time : float ) -> {
+
+	defn _clear_vertex = -> {
 		vertex_data.clear()
 		vertex_color.clear()
 		vertex_norm.clear()
 		vertex_tex_coord.clear()
 		index_data.clear()
+	}
+	
+	defn render = ( state : shared game, partial_time : float ) -> {
+		var transform = identity_mat4()
+		transform.m22 = 0.95
+		transform.m42 = -0.05
 		
-		_push_rect( [ 0,0], [ lossy(state.size.x), lossy(state.size.y) ], [1,1,1] )
+		program.use()
+		gl_bind_vertex_array( vao )
 		
+		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
+		gl_program_uniform_matrix_4fv( program.program, transform_pos, 1, GL_FALSE, transform )
+		
+		_render_background(state, partial_time)
+		_render_foreground(state, partial_time)
+	}
+	
+	defn _render_background = ( state : shared game, partial_time : float ) -> {
+		_clear_vertex()
+		_push_rect( [ 0,0], [ lossy(state.size.x), lossy(state.size.y) ], [1.2,1.2,1.2], [0,0], 1 )
+		_render_vertex(getopt(background_tex).buffer)
+	}
+	
+	defn _render_foreground = ( state : shared game, partial_time : float ) -> {
+		_clear_vertex()
 		defn get_body_if_valid = ( x : integer ) -> ( : optional ipoint ) {
 			x >= 0 and x < state.body.get_size() then return state.body.get(x)
 		}
@@ -388,22 +440,20 @@ service game_field_renderer {
 				partial)
 		}
 		
-		_push_dot( state, state.eat_me, [0.9,0.2,0.6], partial_time )
-		_push_dot( state, state.chase_me, [0.9,0.6,0.2], partial_time )
+		_push_dot( state, state.eat_me, [1,1,1], partial_time, [3,1] )
+		_push_dot( state, state.chase_me, [1,1,1], partial_time, [1,2] )
+		_render_vertex(getopt(foreground_tex).buffer)
+	}
 	
-		program.use()
-		gl_bind_vertex_array( vao )
-		
+	defn _render_vertex = ( sprite_tex : GLuint ) -> {
 		index_data.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_color.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_norm.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_tex_coord.bind_and_push( GL_DYNAMIC_DRAW )
 		
-		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
-		
 		gl_active_texture(GL_TEXTURE0)
-		gl_bind_texture(GL_TEXTURE_2D, getopt(background).buffer)
+		gl_bind_texture(GL_TEXTURE_2D, sprite_tex)
 		program.set_uniform( texture_pos,  0)
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
