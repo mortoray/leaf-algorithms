@@ -6,6 +6,7 @@ service gl_texture {
 	//http://www.sdltutorials.com/sdl-tip-sdl-surface-to-opengl-texture
 	defn from_file = ( file : array｢char｣ ) -> construct {
 		var sdl_tex = img_load( std.u8_encode(file).raw_ptr )
+		std.println(["Image ", sdl_tex.w, " x " , sdl_tex.h])
 		
 		var buffers = array｢GLuint｣(1)
 		gl_gen_textures( 1, buffers.raw_ptr )

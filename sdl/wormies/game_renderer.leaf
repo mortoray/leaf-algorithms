@@ -13,6 +13,7 @@ typedef GLfloat2 : [
 	x : GLfloat,
 	y : GLfloat,
 ]
+//TODO: causing mark_resolved to fail, incomplete type, possibly GLfloat2 ordering not working?
 defn sub = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
 	return [ a.x - b.x, a.y - b.y ]
 }
@@ -192,24 +193,34 @@ service game_field_renderer {
 	var vpos_pos : GLuint
 	var vcolor_pos : GLuint
 	var vnorm_pos : GLuint
+	var tc_pos : GLuint
 	var game_size_pos : GLuint
+	var texture_pos : GLuint
 	
 	var vertex_data = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var vertex_color = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
 	var vertex_norm = gl_buffer｢GLfloat3｣( GL_ARRAY_BUFFER )
+	var vertex_tex_coord = gl_buffer｢GLfloat2｣( GL_ARRAY_BUFFER )
 	var index_data = gl_buffer｢GLuint｣( GL_ELEMENT_ARRAY_BUFFER )
 	
 	var vao : GLuint
+		
+	var background : optional gl_texture
 
 	defn default = -> construct {
 		program.attach_vertex_shader( "wormies/boxes.vert" )
 		program.attach_fragment_shader( "wormies/boxes.frag" )
 		program.link()
 	
+		//TODO: wrong file name crashes!
+		background = gl_texture.from_file( "wormies/assets/background.jpg" )
+		
 		vpos_pos = program.get_attrib_location( "vertex_pos" )
 		vcolor_pos = program.get_attrib_location( "vertex_color" )
 		vnorm_pos = program.get_attrib_location( "vertex_norm" )
+		tc_pos = program.get_attrib_location( "vertex_tex_coord" )
 		game_size_pos = program.get_uniform_location( "game_size" )
+		texture_pos = program.get_uniform_location( "tex" )
 		
 		std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
 		std.println(["Locations: ", vpos_pos, " ", vcolor_pos, " ", game_size_pos])
@@ -220,6 +231,7 @@ service game_field_renderer {
 		gl_enable_vertex_attrib_array( vpos_pos )
 		gl_enable_vertex_attrib_array( vcolor_pos )
 		gl_enable_vertex_attrib_array( vnorm_pos )
+		gl_enable_vertex_attrib_array( tc_pos )
 		
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		gl_vertex_attrib_pointer( vpos_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
@@ -229,15 +241,34 @@ service game_field_renderer {
 		
 		vertex_norm.bind_and_push( GL_DYNAMIC_DRAW )
 		gl_vertex_attrib_pointer( vnorm_pos, 3, GL_FLOAT, GL_FALSE, 3 * GLfloat.aligned_value_size, 0 )
+		
+		vertex_tex_coord.bind_and_push( GL_DYNAMIC_DRAW )
+		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
 	}
 
-	defn _push_box = ( pos : GLfloat2, color : GLfloat3 ) -> {
+	defn _push_dot = ( state : game, dot : game_dot, color : GLfloat3, partial_time : float ) -> {
+		var chase_dir = wrap_normal( dot.pos - dot.prev_pos)
+		var ct = math.sin(partial_time * math.pi/2)
+		
+		_push_box( GLfloat2_from(dot.prev_pos)  + GLfloat2_from(chase_dir) * ct, color,
+			dot.age < 5 ? lossy｢float｣(dot.age)/5 + partial_time/5 | 1)
+	}
+	
+	defn _push_box = ( pos : GLfloat2, color : GLfloat3, partial_ : float ) -> {
+		var partial = lossy｢GLfloat｣(partial_)
+		var top_left : GLfloat2 = [ pos.x, pos.y ]
+		var sz : GLfloat = partial
+		
+		_push_rect( top_left, [ sz, sz ], color )
+	}
+		
+	defn _push_rect = ( pos : GLfloat2, size : GLfloat2, color : GLfloat3 ) -> {
 		var vdp = lossy｢GLuint｣(vertex_data.get_size())
 		
 		vertex_data.push( [ pos.x, pos.y ] )
-		vertex_data.push( [ pos.x+1, pos.y ] )
-		vertex_data.push( [ pos.x+1, pos.y+1 ] )
-		vertex_data.push( [ pos.x, pos.y+1 ] )
+		vertex_data.push( [ pos.x + size.x, pos.y ] )
+		vertex_data.push( [ pos.x + size.x, pos.y + size.y ] )
+		vertex_data.push( [ pos.x, pos.y + size.y ] )
 		
 		vertex_color.push( color )
 		vertex_color.push( color )
@@ -248,6 +279,11 @@ service game_field_renderer {
 		vertex_norm.push( [ 1, -1, 1 ] )
 		vertex_norm.push( [ 1, 1, 1 ] )
 		vertex_norm.push( [ -1, 1, 1 ] )
+		
+		vertex_tex_coord.push( [ 0, 0 ] )
+		vertex_tex_coord.push( [ 1, 0 ] )
+		vertex_tex_coord.push( [ 1, 1 ] )
+		vertex_tex_coord.push( [ 0, 1 ] )
 		
 		//TODO: efficiency by damned!  (don't update if not changed)
 		index_data.push(vdp + 0)
@@ -284,6 +320,7 @@ service game_field_renderer {
 		vertex_data.push( base ) //vdp#0 == base_pt
 		vertex_color.push( color )
 		vertex_norm.push( [ 0, 0, 1 ] )
+		vertex_tex_coord.push( [ 0.5, 0.5 ] )
 		
  		var steps = 32
 		for step in std.range(0,steps) {
@@ -291,11 +328,14 @@ service game_field_renderer {
  			
  			//TODO: missing one lossy｢float｣ caused error without source
  			var angle = 2*math.pi * (lossy｢float｣(step)/lossy｢float｣(steps));
+ 			var rel_x = clamp｢float｣( math.cos( angle )*0.55*partial, -0.5, 0.5)
+ 			var rel_y = clamp｢float｣( math.sin( angle )*0.55*partial, -0.5, 0.5)
  			vertex_data.push( [
 				//TODO: missing ｢float｣ on clamp had odd issue
- 				lossy(base.x + clamp｢float｣( math.cos( angle )*0.55*partial, -0.5, 0.5) ),
- 				lossy(base.y + clamp｢float｣( math.sin( angle )*0.55*partial, -0.5, 0.5) ),
+ 				lossy(base.x + rel_x ),
+ 				lossy(base.y + rel_y ),
  			])
+ 			vertex_tex_coord.push( [ lossy(rel_x), lossy(rel_y) ] )
  			
  			var a_norm : GLfloat3 = [ 
 				lossy｢GLfloat｣(math.cos(angle)), 
@@ -325,7 +365,10 @@ service game_field_renderer {
 		vertex_data.clear()
 		vertex_color.clear()
 		vertex_norm.clear()
+		vertex_tex_coord.clear()
 		index_data.clear()
+		
+		_push_rect( [ 0,0], [ lossy(state.size.x), lossy(state.size.y) ], [1,1,1] )
 		
 		defn get_body_if_valid = ( x : integer ) -> ( : optional ipoint ) {
 			x >= 0 and x < state.body.get_size() then return state.body.get(x)
@@ -345,12 +388,8 @@ service game_field_renderer {
 				partial)
 		}
 		
-		_push_box( GLfloat2_from(state.eat_me), [0.9,0.2,0.6] )
-		
-		var chase_dir = wrap_normal( state.chase_me.pos - state.chase_me.prev_pos)
-		var ct = math.sin(partial_time * math.pi/2)
-		_push_box( GLfloat2_from(state.chase_me.prev_pos)  + 
-			GLfloat2_from(chase_dir) * ct, [0.9,0.6,0.2] )
+		_push_dot( state, state.eat_me, [0.9,0.2,0.6], partial_time )
+		_push_dot( state, state.chase_me, [0.9,0.6,0.2], partial_time )
 	
 		program.use()
 		gl_bind_vertex_array( vao )
@@ -359,8 +398,13 @@ service game_field_renderer {
 		vertex_data.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_color.bind_and_push( GL_DYNAMIC_DRAW )
 		vertex_norm.bind_and_push( GL_DYNAMIC_DRAW )
+		vertex_tex_coord.bind_and_push( GL_DYNAMIC_DRAW )
 		
 		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
+		
+		gl_active_texture(GL_TEXTURE0)
+		gl_bind_texture(GL_TEXTURE_2D, getopt(background).buffer)
+		program.set_uniform( texture_pos,  0)
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLES, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )

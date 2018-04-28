@@ -20,6 +20,7 @@ typedef game_dot : [
 	pos : ipoint,
 	prev_pos : ipoint,
 	dir : ipoint,
+	age : integer,
 ]
 
 class game {
@@ -29,8 +30,8 @@ class game {
 	var body : collections.vector｢ipoint｣
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 10
-	var eat_me : ipoint
 	
+	var eat_me : game_dot
 	var chase_me : game_dot
 
 	var alive : boolean = true
@@ -51,11 +52,14 @@ class game {
 		]
 	}
 	defn _set_next_eat_me = -> {
-		eat_me = _get_random_eat_loc()
+		eat_me.pos = _get_random_eat_loc()
+		eat_me.prev_pos = eat_me.pos
+		eat_me.age = 0
 	}
 	defn _set_next_chase_me = -> {
 		chase_me.pos = _get_random_eat_loc()
 		chase_me.prev_pos = chase_me.pos
+		chase_me.age = 0
 		var dir = rand_integer( 0, 4 )
 		chase_me.dir = select(
 			dir == 0 ? [1,0],
@@ -73,11 +77,21 @@ class game {
 	}
 	
 	defn _move = ( xoff : integer, yoff  : integer ) -> {
-		head_pos.x = mod(head_pos.x + xoff, size.x)
-		head_pos.y = mod(head_pos.y + yoff, size.y)
+		//this does wraparound
+		//head_pos.x = mod(head_pos.x + xoff, size.x)
+		//head_pos.y = mod(head_pos.y + yoff, size.y)
+		
+		//this kills if hits edge
+		head_pos.x = head_pos.x + xoff
+		head_pos.y = head_pos.y + yoff
+		head_pos.x < 0 or head_pos.x >= size.x or head_pos.y < 0 or head_pos.y >= size.y then {
+			alive = false
+			return
+		}
+		
 		body.add( head_pos )
 		
-		equals( head_pos, eat_me ) then {
+		_eaten( eat_me ) then {
 			score += 1
 			body_length += 2
 			_set_next_eat_me()
@@ -110,6 +124,7 @@ class game {
 			_check_collision()
 		}
 		
+		eat_me = _step_dot( eat_me )
 		chase_me = _step_dot( chase_me )
 	}
 	
@@ -120,6 +135,7 @@ class game {
 			mod( dot.pos.x + dot.dir.x, size.x ),
 			mod( dot.pos.y + dot.dir.y, size.y ),
 		]
+		dot.age += 1
 		return dot
 	}
 	
