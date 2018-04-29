@@ -13,7 +13,6 @@ typedef GLfloat2 : [
 	x : GLfloat,
 	y : GLfloat,
 ]
-//TODO: causing mark_resolved to fail, incomplete type, possibly GLfloat2 ordering not working?
 defn sub = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
 	return [ a.x - b.x, a.y - b.y ]
 }
@@ -56,7 +55,8 @@ defn identity_mat4 = -> ( : GLmat4 ) {
 defn wrap_normal = ( a : ipoint ) -> ( : ipoint ) {
 	return [
 		a.x < -1 ? 1 | (a.x > 1 ? -1 | a.x),
-		a.y < -1 ? 1 | (a.y > 1 ? -1 | a.y)]
+		a.y < -1 ? 1 | (a.y > 1 ? -1 | a.y)
+	]
 }
 
 typedef GLfloat3 : [
@@ -91,7 +91,8 @@ defn lerp = ( a : GLfloat3, b : GLfloat3, t : float ) -> {
 	return [
 		(b.r - a.r) * t + a.r,
 		(b.g - a.g) * t + a.g,
-		(b.b - a.b) * t + a.b ]
+		(b.b - a.b) * t + a.b
+	]
 }
 
 defn max = (a,b) -> {
@@ -198,7 +199,8 @@ service game_ui_renderer {
 		program.set_uniform( tex_pos, 0 )
 		
 		var src_sz = text.size
-		var width = lossy｢GLfloat｣(src_sz.x) / lossy｢GLfloat｣(src_sz.y) * height
+		var width = lossy｢GLfloat｣(src_sz.x) / 
+			lossy｢GLfloat｣(src_sz.y) * height
 		program.set_uniform( placement_pos, pos.x - width/2, pos.y - height/2, width, height)
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
@@ -235,7 +237,6 @@ service game_field_renderer {
 		program.attach_fragment_shader( "wormies/boxes.frag" )
 		program.link()
 	
-		//TODO: wrong file name crashes!
 		background_tex = gl_texture.from_file( "wormies/assets/background.jpg" )
 		foreground_tex = gl_texture.from_file( "wormies/assets/foreground_sprites.png" )
 		
@@ -315,7 +316,6 @@ service game_field_renderer {
 		vertex_tex_coord.push( [ sx+sprite_scale_f, sy ] )
 		vertex_tex_coord.push( [ sx, sy ] )
 		
-		//TODO: efficiency by damned!  (don't update if not changed)
 		index_data.push(vdp + 0)
 		index_data.push(vdp + 1)
 		index_data.push(vdp + 2)
@@ -358,10 +358,10 @@ service game_field_renderer {
  			
  			//TODO: missing one lossy｢float｣ caused error without source
  			var angle = 2*math.pi * (lossy｢float｣(step)/lossy｢float｣(steps));
+			//TODO: missing ｢float｣ on clamp had odd issue
  			var rel_x = clamp｢float｣( math.cos( angle )*0.55*partial, -0.5, 0.5)
  			var rel_y = clamp｢float｣( math.sin( angle )*0.55*partial, -0.5, 0.5)
  			vertex_data.push( [
-				//TODO: missing ｢float｣ on clamp had odd issue
  				lossy(base.x + rel_x ),
  				lossy(base.y + rel_y ),
  			])
@@ -428,11 +428,11 @@ service game_field_renderer {
 		
 		var body_color : GLfloat3 = state.alive ? [0.5,0.7,0] | [0.8,0,0]
 		for i in std.range(0, state.body.get_size()) {
-			//TODO: go unification wrong, produced compile error
-			//var partial = i == 0 ? (1 - partial_time) | (i == state.body.get_size()+1 ? partial_time | 1)
-			var partial : float = 1
-			i == 0 and state.is_body_full() then partial = 1 - partial_time
-			i == state.body.get_size()-1 then partial = partial_time
+			var partial = i == 0 and state.is_body_full() ? 
+				1 - partial_time | 
+				i == state.body.get_size()-1 ? 
+				partial_time | 
+				1
 			
 			_push_body_segment( state.body.get(i), body_color, 
 				get_body_if_valid(i-1), 

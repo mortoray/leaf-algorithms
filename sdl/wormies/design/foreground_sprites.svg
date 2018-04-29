@@ -16,7 +16,10 @@
    id="svg13358"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="foreground_sprites.svg">
+   sodipodi:docname="foreground_sprites.svg"
+   inkscape:export-filename="/src/leaf-algorithms/sdl/wormies/assets/foreground_sprites.png"
+   inkscape:export-xdpi="260.10001"
+   inkscape:export-ydpi="260.10001">
   <defs
      id="defs13360" />
   <sodipodi:namedview
@@ -27,7 +30,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="177.63558"
+     inkscape:cx="178.14066"
      inkscape:cy="188.64988"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
