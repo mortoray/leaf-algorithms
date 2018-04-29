@@ -441,6 +441,7 @@ service game_field_renderer {
 		
 		_push_dot( state, state.eat_me, [1,1,1], partial_time, [3,1] )
 		_push_dot( state, state.chase_me, [1,1,1], partial_time, [1,2] )
+		_push_dot( state, state.monster, [1,1,1], partial_time, [0,4] )
 		_render_vertex(getopt(foreground_tex).buffer)
 	}
 	
