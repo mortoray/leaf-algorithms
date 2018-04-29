@@ -1,6 +1,13 @@
 var rand_seed : binary = 1
 literal rand_max = 32767
 
+alias time_t : abi_long
+@import("time") multi _rand_time : ( : abi_ptr ) -> ( : time_t ) raw no_throw
+
+defn rand_init = -> {
+	rand_seed = lossy(_rand_time(0))
+}
+
 defn rand_next_float = -> {
 	return lossy｢float｣(_rand_step()) /  rand_max
 }

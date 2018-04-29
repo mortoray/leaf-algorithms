@@ -41,7 +41,7 @@ class game {
 	
 	defn default = -> construct {
 		size = [ 30, 20 ]
-		head_pos = [ 10, 7 ]
+		head_pos = [ rand_integer(0,size.x), rand_integer(0,size.y) ]
 		body.add( head_pos )
 		_set_next_eat_me()
 		_set_next_chase_me()
@@ -93,17 +93,6 @@ class game {
 		
 		body.add( head_pos )
 		
-		_eaten( eat_me ) then {
-			score += 1
-			body_length += 2
-			_set_next_eat_me()
-		}
-		_eaten( chase_me ) then {
-			score += 2
-			body_length += 3
-			_set_next_chase_me()
-		}
-		
 		body.get_size() > body_length then {
 			body.remove(0)
 		}
@@ -125,6 +114,7 @@ class game {
 		_step_elapsed += elapsed
 		while _step_elapsed > frame_step_ticks {
 			_step_quantized()
+			_step_check()
 			_step_elapsed -= frame_step_ticks
 		}
 		
@@ -132,7 +122,6 @@ class game {
 	}
 		
 	defn _step_quantized = -> {
-		
 		req_dir.get_size() > 0 then {
 			dir = req_dir.get(0)
 			req_dir.remove(0)
@@ -140,11 +129,26 @@ class game {
 		
 		dir.x == 0 and dir.y == 0 else {
 			_move( dir.x, dir. y)
-			_check_collision()
 		}
 		
 		eat_me = _step_dot( eat_me )
 		chase_me = _step_dot( chase_me )
+	}
+	
+	defn _step_check = -> {
+		_eaten( eat_me ) then {
+			score += 1
+			body_length += 2
+			_set_next_eat_me()
+		}
+		
+		_eaten( chase_me ) then {
+			score += 2
+			body_length += 3
+			_set_next_chase_me()
+		}
+		
+		_check_collision()
 	}
 	
 	defn _step_dot = ( what : game_dot ) -> ( : game_dot ) {

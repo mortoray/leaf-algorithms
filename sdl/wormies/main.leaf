@@ -11,6 +11,7 @@ var main = -> {
 
 
 var run = -> {
+	rand_init()
 	var app = sdl_gl_window("Wormies", 1200, 800 )
 	
 	var state : shared game

@@ -275,9 +275,8 @@ service game_field_renderer {
 	defn _push_dot = ( state : game, dot : game_dot, color : GLfloat3, partial_time : float,
 		sprite : [ : integer, : integer ] ) -> {
 		var chase_dir = wrap_normal( dot.pos - dot.prev_pos)
-		var ct = math.sin(partial_time * math.pi/2)
 		
-		_push_box( GLfloat2_from(dot.prev_pos)  + GLfloat2_from(chase_dir) * ct, color,
+		_push_box( GLfloat2_from(dot.prev_pos)  + GLfloat2_from(chase_dir) * partial_time, color,
 			dot.age < 5 ? lossy｢float｣(dot.age)/5 + partial_time/5 | 1, sprite)
 	}
 	

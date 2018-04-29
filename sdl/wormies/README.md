@@ -29,3 +29,4 @@ In the root repo directory:
 https://pixabay.com/en/background-texture-leaves-nature-1507139/
 https://pixabay.com/en/fruit-peach-apple-grapes-cherry-3244134/
 https://pixabay.com/en/skinned-snake-skin-scale-snake-394384/
+https://pixabay.com/en/face-carved-rock-boulder-stone-576686/
