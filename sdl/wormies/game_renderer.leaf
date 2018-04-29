@@ -2,8 +2,8 @@ service game_renderer {
 	var ui : game_ui_renderer
 	var field : game_field_renderer
 	
-	defn render = ( state : shared game, partial_time : float ) -> {
- 		field.render( state, partial_time )
+	defn render = ( state : shared game ) -> {
+ 		field.render( state )
  		ui.render( state )
 	}
 }
@@ -399,7 +399,7 @@ service game_field_renderer {
 		index_data.clear()
 	}
 	
-	defn render = ( state : shared game, partial_time : float ) -> {
+	defn render = ( state : shared game ) -> {
 		var transform = identity_mat4()
 		transform.m22 = 0.95
 		transform.m42 = -0.05
@@ -410,8 +410,8 @@ service game_field_renderer {
 		program.set_uniform( game_size_pos, lossy｢GLfloat｣(state.size.x), lossy｢GLfloat｣(state.size.y) )
 		gl_program_uniform_matrix_4fv( program.program, transform_pos, 1, GL_FALSE, transform )
 		
-		_render_background(state, partial_time)
-		_render_foreground(state, partial_time)
+		_render_background(state, state.partial_time)
+		_render_foreground(state, state.partial_time)
 	}
 	
 	defn _render_background = ( state : shared game, partial_time : float ) -> {

@@ -23,6 +23,8 @@ typedef game_dot : [
 	age : integer,
 ]
 
+literal frame_step_ticks = 150
+
 class game {
 	var size : ipoint
 	var head_pos : ipoint
@@ -111,8 +113,25 @@ class game {
 		return body.get_size() >= body_length
 	}
 	
-	defn step = -> {
-		alive else return
+	var _step_elapsed : float
+	var partial_time : float = 1
+	
+	defn step = ( elapsed : float ) -> {
+		alive else {
+			partial_time = 1 //may cause blip, but better than nothing appeaering
+			return
+		}
+		
+		_step_elapsed += elapsed
+		while _step_elapsed > frame_step_ticks {
+			_step_quantized()
+			_step_elapsed -= frame_step_ticks
+		}
+		
+		partial_time = _step_elapsed / frame_step_ticks
+	}
+		
+	defn _step_quantized = -> {
 		
 		req_dir.get_size() > 0 then {
 			dir = req_dir.get(0)

@@ -9,7 +9,6 @@ var main = -> {
 	}
 }
 
-literal frame_step_ticks = 150
 
 var run = -> {
 	var app = sdl_gl_window("Wormies", 1200, 800 )
@@ -19,9 +18,8 @@ var run = -> {
 	var renderer : game_renderer
 	
  	var run = true
- 	var pause = false
+ 	var pause = true
  	var last_ticks = sdl_get_ticks()
- 	var elapsed_ticks : type_infer(last_ticks) = 0
  	
 	while run {
 		var e : SDL_Event
@@ -39,33 +37,49 @@ var run = -> {
 			}
 			e.type_ == SDL_KEYDOWN then {
 				var key_ev = cast_ptr｢SDL_KeyboardEvent value_ptr｣(e)
+				
+				var unpause = -> {
+					pause = false
+					last_ticks = sdl_get_ticks()
+				}
+				
 				//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
-				key_ev.keysym.sym == SDLK_UP then { state.req_move(0,1) }
-				key_ev.keysym.sym == SDLK_DOWN then { state.req_move(0,-1) }
-				key_ev.keysym.sym == SDLK_LEFT then { state.req_move(-1,0) }
-				key_ev.keysym.sym == SDLK_RIGHT then { state.req_move(1,0) }
+				key_ev.keysym.sym == SDLK_UP then { 
+					state.req_move(0,1) 
+					unpause()
+				}
+				key_ev.keysym.sym == SDLK_DOWN then { 
+					state.req_move(0,-1) 
+					unpause()
+				}
+				key_ev.keysym.sym == SDLK_LEFT then { 
+					state.req_move(-1,0) 
+					unpause()
+				}
+				key_ev.keysym.sym == SDLK_RIGHT then { 
+					state.req_move(1,0) 
+					unpause()
+				}
 				key_ev.keysym.sym == SDLK_PAUSE then { 
 					std.println(["Pause ", pause])
-					pause = not pause 
+					pause then {
+						unpause()
+					} else {
+						pause = true
+					}
 				}
 			}
 		}
 		not pause then {
 			var cur_ticks = sdl_get_ticks()
-			elapsed_ticks += cur_ticks - last_ticks
-			while elapsed_ticks > frame_step_ticks {
-				state.step()
-				elapsed_ticks -= frame_step_ticks
-			}
+			state.step( cur_ticks - last_ticks )
 			last_ticks = cur_ticks
 		}
-		
-		var partial_time = lossy｢float｣(elapsed_ticks) / frame_step_ticks
 		
 		gl_clear_color(205/255, 216/255, 208/255,1)
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
 
-		renderer.render( state, partial_time )
+		renderer.render( state )
 		
 		sdl_gl_swap_window( app.window )
 	}
