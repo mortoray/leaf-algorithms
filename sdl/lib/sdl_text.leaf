@@ -9,7 +9,7 @@ typedef SDL_TTF_Font : abi_pack [
 @import( "TTF_CloseFont" ) multi sdl_ttf_close_font : ( font : SDL_TTF_Font value_ptr ) -> () raw no_throw
 
 @import ( "TTF_RenderUTF8_Blended" ) multi sdl_ttf_render_utf8_blended : ( font : SDL_TTF_Font value_ptr,
-	text : raw_array｢abi_char｣ value_ptr, fg : binary 32bit /*SDL_Color*/ ) -> ( : SDL_Surface value_ptr) raw no_throw
+	text : raw_array｢abi_char｣ value_ptr, fg : SDL_Color ) -> ( : SDL_Surface value_ptr) raw no_throw
 
 	
 service gl_text_texture {
@@ -19,7 +19,7 @@ service gl_text_texture {
 	defn from_text = ( font : SDL_TTF_Font value_ptr, text : array｢char｣ ) -> construct {
 		var api_text = std.u8_encode(text)
 		
-		var sdl_tex = sdl_ttf_render_utf8_blended( font, api_text.raw_ptr, 0xFF00A0FA )
+		var sdl_tex = sdl_ttf_render_utf8_blended( font, api_text.raw_ptr, [ 0xFF, 0xFF, 0xFF, 0xFF ] )
 		size = [ lossy(sdl_tex.w), lossy(sdl_tex.h) ]
 		//var sdl_tex = sdl_convert_surface_format( sdl_texa, SDL_PIXELFORMAT_RGBA8888, 0 )
 

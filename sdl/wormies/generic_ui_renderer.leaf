@@ -5,6 +5,7 @@ service generic_ui_renderer {
 	var tc_pos : GLuint
 	var tex_pos : GLuint
 	var placement_pos : GLuint
+	var tint_pos : GLuint
 	
 	var vao : GLuint
 
@@ -32,6 +33,7 @@ service generic_ui_renderer {
 		tc_pos = program.get_attrib_location( "tex_coord" )
 		tex_pos = program.get_uniform_location( "tex" )
 		placement_pos = program.get_uniform_location( "placement" )
+		tint_pos = program.get_uniform_location( "tint" )
 		
 		vao = gl_gen_vertex_array()
 		gl_bind_vertex_array( vao )
@@ -68,7 +70,8 @@ service generic_ui_renderer {
 	defn end = -> {
 	}
 	
-	defn draw_text =  ( text : gl_text_texture, pos : GLfloat2, rel_anchor : GLfloat2, region : viewport ) -> {
+	defn draw_text =  ( text : gl_text_texture, pos : GLfloat2, rel_anchor : GLfloat2, region : viewport,
+		color : GLfloat4 ) -> {
 		gl_active_texture(GL_TEXTURE0)
 		gl_bind_texture(GL_TEXTURE_2D, text.buffer)
 		program.set_uniform( tex_pos, 0 )
@@ -82,6 +85,7 @@ service generic_ui_renderer {
 		program.set_uniform( placement_pos, 
 			ndc_pos.x - rel_anchor.x * ndc_size.x, ndc_pos.y - rel_anchor.y * ndc_size.y, 
 			ndc_size.x, ndc_size.y)
+		program.set_uniform( tint_pos, color#0, color#1, color#2, color#3 )
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLE_FAN, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )

@@ -2,6 +2,7 @@ service game_renderer {
 	var ui : game_ui_renderer
 	var field : game_field_renderer
 	var menu : game_menu_renderer
+	var game_over : game_over_renderer
 	
 	defn render = ( app_inst : shared game_app, region : viewport ) -> () {
 		var field_region = region
@@ -22,6 +23,9 @@ service game_renderer {
 			return
 		} 
 		
+		app_inst.stage == stage_game_over then {
+			game_over.render( app_inst.game_state, region )
+		}
 	}
 }
 

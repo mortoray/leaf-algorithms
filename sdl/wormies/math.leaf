@@ -54,6 +54,13 @@ typedef GLfloat3 : [
 	b : GLfloat,
 ]
 
+typedef GLfloat4 : [
+	r : GLfloat,
+	g : GLfloat,
+	b : GLfloat,
+	a : GLfloat,
+]
+
 defn lossy_glfloat3 = ( v ) -> ( : GLfloat3 ) {
 	return [ lossy(v#0), lossy(v#1), lossy(v#2) ]
 }

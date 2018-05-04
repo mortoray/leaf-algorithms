@@ -22,7 +22,7 @@ class game_app {
 		//TODO: This thing breaks the compiler
  		//game_state.game_over() -> {
  		
- 		game_state.game_over() then {
+ 		stage == stage_play and game_state.game_over() then {
  			game_over()
  		}
 	}
@@ -31,4 +31,12 @@ class game_app {
 		stage = stage_game_over
 	}
 
+	var run : boolean = true
+	defn quit = -> {
+		run = false
+	}
+	
+	var return_to_menu = -> {
+		stage = stage_menu
+	}
 }

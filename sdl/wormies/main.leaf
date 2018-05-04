@@ -22,6 +22,8 @@ typedef viewport : [
 
 var pause = true
 var last_ticks : float
+//TODO: caused init seg_fault
+//var renderer : game_renderer
 
 var run = -> {
 	rand_init()
@@ -29,17 +31,17 @@ var run = -> {
 	var app = sdl_gl_window("Wormies", main_viewport.window_size.x, main_viewport.window_size.y )
 	
 	var app_inst : shared game_app
-	
+
 	var renderer : game_renderer
 	
- 	var run = true
  	last_ticks = get_elapsed()
  	
-	while run {
+ 	
+	while app_inst.run {
 		var e : SDL_Event
 		while sdl_poll_event(e) != 0 {
 			e.type_ == SDL_QUIT then  {
-				run = false
+				app_inst.quit()
 			}
 			e.type_ == SDL_WINDOWEVENT then {
 				var win_ev = cast_ptr｢SDL_WindowEvent value_ptr｣(e)
@@ -57,7 +59,7 @@ var run = -> {
 				select(
 					app_inst.stage == stage_menu ? key_stage_menu,
 					app_inst.stage == stage_play ? key_stage_play,
-					key_stage_game_over )( app_inst, key_ev )
+					key_stage_game_over )( app_inst, renderer, key_ev )
 			}
 		}
 		not pause then {
@@ -76,23 +78,41 @@ var run = -> {
 	}
 }
 
-defn key_stage_menu = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+defn key_stage_menu = ( app_inst : shared game_app, 
+	renderer : game_renderer, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+	
+	key_ev.keysym.sym == SDLK_UP then { 
+		renderer.menu.up()
+	}
+	key_ev.keysym.sym == SDLK_DOWN then { 
+		renderer.menu.down()
+	}
 	key_ev.keysym.sym == SDLK_SPACE then {
-		app_inst.start_game()
+		renderer.menu.activate( app_inst )
 	}
 }
 
-defn key_stage_game_over = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+defn key_stage_game_over = ( app_inst : shared game_app, 
+	renderer : game_renderer, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+	
+	key_ev.keysym.sym == SDLK_UP then { 
+		renderer.game_over.up()
+	}
+	key_ev.keysym.sym == SDLK_DOWN then { 
+		renderer.game_over.down()
+	}
 	key_ev.keysym.sym == SDLK_SPACE then {
-		app_inst.start_game()
+		renderer.game_over.activate( app_inst )
+		std.println(["Space OVer ", app_inst.stage])
 	}
 }
 
-defn key_stage_play = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+defn key_stage_play = ( app_inst : shared game_app,  
+	renderer : game_renderer, key_ev : SDL_KeyboardEvent value_ptr ) -> {
 				
 	var unpause = -> {
 		pause = false
-		last_ticks = get_elapsed()//sdl_get_ticks()
+		last_ticks = get_elapsed()
 	}
 	
 	//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])

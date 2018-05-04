@@ -22,8 +22,8 @@ service game_ui_renderer {
 		generic.start( region )
 
 		//TODO: missing region gave incomplete typing
-		generic.draw_text( getopt(text_title), [ 0, 0 ], [ 0, 0], region )
-		generic.draw_text( getopt(text_score), [ lossy(region.region_size.x), 0 ], [ 1, 0 ], region )
+		generic.draw_text( getopt(text_title), [ 0, 0 ], [ 0, 0], region, [ 0, 0.8, 0.95, 1] )
+		generic.draw_text( getopt(text_score), [ lossy(region.region_size.x), 0 ], [ 1, 0 ], region, [ 0, 0.8, 0.95, 1] )
 		
 		generic.end()
 	}

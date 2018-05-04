@@ -1,14 +1,14 @@
-service game_menu_renderer {
+service game_over_renderer {
 	
 	var generic : generic_ui_renderer
 	
-	var text_start : optional gl_text_texture
+	var text_return : optional gl_text_texture
 	var text_quit : optional gl_text_texture
 
 	var active : integer
 	
 	defn default = -> construct {
-		text_start = gl_text_texture.from_text( generic.font, "Start" )
+		text_return = gl_text_texture.from_text( generic.font, "Return to Menu" )
 		text_quit = gl_text_texture.from_text( generic.font, "Quit" )
 	}
 	
@@ -16,19 +16,20 @@ service game_menu_renderer {
 		generic.start( region )
 
 		//TODO: missing region gave incomplete typing
-		generic.draw_text( getopt(text_start), 
+		generic.draw_text( getopt(text_return), 
 			[ lossy(region.region_size.x/2), lossy(region.region_size.y/2) ], 
 			[ 0.5, 0.5], region, 
 			active == 0 ? [ 0.8, 0, 0.95, 1] | [ 0, 0.8, 0.95, 1] )
 		generic.draw_text( getopt(text_quit), 
-			[ lossy(region.region_size.x/2), lossy(region.region_size.y/2 + 40) ], 
-			[ 0.5, 0.5], region,
+			[ lossy(region.region_size.x/2), lossy(region.region_size.y/2) + 40 ], 
+			[ 0.5, 0.5], region, 
 			active == 1 ? [ 0.8, 0, 0.95, 1] | [ 0, 0.8, 0.95, 1] )
 		
 		generic.end()
 	}
 	
 	defn up = -> {
+		//TODO: mod( ?, 1 ) should always be 0, but it's not
 		active = mod( active - 1, 2 )
 	}
 	
@@ -38,13 +39,12 @@ service game_menu_renderer {
 	
 	defn activate = ( app_inst : game_app shared ) -> {
 		active == 0 then {
-			app_inst.start_game()
+			app_inst.return_to_menu()
 			return
 		} 
-		
 		active == 1 then {
 			app_inst.quit()
 			return
-		}
+		} 
 	}
 }
