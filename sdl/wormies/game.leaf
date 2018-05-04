@@ -221,4 +221,8 @@ class game {
 		}
 		
 	}
+	
+	defn game_over = () -> ( : boolean ) {
+		return not alive
+	}
 }

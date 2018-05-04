@@ -20,24 +20,24 @@ typedef viewport : [
 	region_size : ipoint,
 ]
 
+var pause = true
+var last_ticks : float
+
 var run = -> {
 	rand_init()
  	var main_viewport : viewport = [ [1200,800], [0, 0], [1200, 800] ]
 	var app = sdl_gl_window("Wormies", main_viewport.window_size.x, main_viewport.window_size.y )
 	
-	var state : shared game
+	var app_inst : shared game_app
 	
 	var renderer : game_renderer
 	
  	var run = true
- 	var pause = true
- 	var last_ticks = get_elapsed() //sdl_get_ticks()
-
+ 	last_ticks = get_elapsed()
  	
 	while run {
 		var e : SDL_Event
 		while sdl_poll_event(e) != 0 {
-			var q = sdl_poll_event(e)
 			e.type_ == SDL_QUIT then  {
 				run = false
 			}
@@ -54,51 +54,70 @@ var run = -> {
 			}
 			e.type_ == SDL_KEYDOWN then {
 				var key_ev = cast_ptr｢SDL_KeyboardEvent value_ptr｣(e)
-				
-				var unpause = -> {
-					pause = false
-					last_ticks = get_elapsed()//sdl_get_ticks()
-				}
-				
-				//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
-				key_ev.keysym.sym == SDLK_UP then { 
-					state.req_move(0,1) 
-					unpause()
-				}
-				key_ev.keysym.sym == SDLK_DOWN then { 
-					state.req_move(0,-1) 
-					unpause()
-				}
-				key_ev.keysym.sym == SDLK_LEFT then { 
-					state.req_move(-1,0) 
-					unpause()
-				}
-				key_ev.keysym.sym == SDLK_RIGHT then { 
-					state.req_move(1,0) 
-					unpause()
-				}
-				key_ev.keysym.sym == SDLK_PAUSE then { 
-					std.println(["Pause ", pause])
-					pause then {
-						unpause()
-					} else {
-						pause = true
-					}
-				}
+				select(
+					app_inst.stage == stage_menu ? key_stage_menu,
+					app_inst.stage == stage_play ? key_stage_play,
+					key_stage_game_over )( app_inst, key_ev )
 			}
 		}
 		not pause then {
 			var cur_ticks = get_elapsed()
 			var elapsed = cur_ticks - last_ticks
-			state.step( elapsed )
+			app_inst.step( elapsed )
 			last_ticks = cur_ticks
 		}
 		
 		gl_clear_color(205/255, 216/255, 208/255,1)
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
 
-		renderer.render( state, main_viewport )
+		renderer.render( app_inst.game_state, main_viewport )
 		
 		sdl_gl_swap_window( app.window )
+	}
+}
+
+defn key_stage_menu = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+	key_ev.keysym.sym == SDLK_SPACE then {
+		app_inst.start_game()
+	}
+}
+
+defn key_stage_game_over = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+	key_ev.keysym.sym == SDLK_SPACE then {
+		app_inst.start_game()
+	}
+}
+
+defn key_stage_play = ( app_inst : shared game_app, key_ev : SDL_KeyboardEvent value_ptr ) -> {
+				
+	var unpause = -> {
+		pause = false
+		last_ticks = get_elapsed()//sdl_get_ticks()
+	}
+	
+	//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
+	key_ev.keysym.sym == SDLK_UP then { 
+		app_inst.game_state.req_move(0,1) 
+		unpause()
+	}
+	key_ev.keysym.sym == SDLK_DOWN then { 
+		app_inst.game_state.req_move(0,-1) 
+		unpause()
+	}
+	key_ev.keysym.sym == SDLK_LEFT then { 
+		app_inst.game_state.req_move(-1,0) 
+		unpause()
+	}
+	key_ev.keysym.sym == SDLK_RIGHT then { 
+		app_inst.game_state.req_move(1,0) 
+		unpause()
+	}
+	key_ev.keysym.sym == SDLK_PAUSE then { 
+		std.println(["Pause ", pause])
+		pause then {
+			unpause()
+		} else {
+			pause = true
+		}
 	}
 }

@@ -1,0 +1,34 @@
+//TODO: Leaf lacks enum's at the moment
+literal stage_menu = 0
+literal stage_play = 1
+literal stage_game_over = 2
+
+class game_app {
+	var game_state : shared game
+
+	var stage : integer = stage_menu
+	
+	//TODO: without construct gave duplicate symbol error, which is correct, but weird
+	defn default = -> construct {
+	}
+	
+	defn start_game = -> {
+		game_state = type｢shared game｣()
+		stage = stage_play
+	}
+
+	defn step = ( elapsed : float ) -> {
+		game_state.step( elapsed )
+		//TODO: This thing breaks the compiler
+ 		//game_state.game_over() -> {
+ 		
+ 		game_state.game_over() then {
+ 			game_over()
+ 		}
+	}
+	
+	defn game_over = -> {
+		stage = stage_game_over
+	}
+
+}
