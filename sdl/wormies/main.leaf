@@ -9,10 +9,21 @@ var main = -> {
 	}
 }
 
+// Viewport in Points
+// TODO: still need commas in types!!!
+typedef viewport : [
+	window_size : ipoint,
+	
+	//region
+	region_position : ipoint,
+	//TODO: size is a reserved field! It refers to the number of elements in the tuple
+	region_size : ipoint,
+]
 
 var run = -> {
 	rand_init()
-	var app = sdl_gl_window("Wormies", 1200, 800 )
+ 	var main_viewport : viewport = [ [1200,800], [0, 0], [1200, 800] ]
+	var app = sdl_gl_window("Wormies", main_viewport.window_size.x, main_viewport.window_size.y )
 	
 	var state : shared game
 	
@@ -20,7 +31,8 @@ var run = -> {
 	
  	var run = true
  	var pause = true
- 	var last_ticks = sdl_get_ticks()
+ 	var last_ticks = get_elapsed() //sdl_get_ticks()
+
  	
 	while run {
 		var e : SDL_Event
@@ -34,6 +46,10 @@ var run = -> {
 				win_ev.event == SDL_WINDOWEVENT_SIZE_CHANGED then {
 					var window_sz = sdl_get_window_size(app.window)
 					gl_viewport( 0, 0, window_sz.x, window_sz.y )
+					//TODO: missing line on error
+					//main_viewport.size = window_sz
+					main_viewport.window_size = window_sz
+					main_viewport.region_size = window_sz
 				}
 			}
 			e.type_ == SDL_KEYDOWN then {
@@ -41,7 +57,7 @@ var run = -> {
 				
 				var unpause = -> {
 					pause = false
-					last_ticks = sdl_get_ticks()
+					last_ticks = get_elapsed()//sdl_get_ticks()
 				}
 				
 				//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
@@ -72,15 +88,16 @@ var run = -> {
 			}
 		}
 		not pause then {
-			var cur_ticks = sdl_get_ticks()
-			state.step( cur_ticks - last_ticks )
+			var cur_ticks = get_elapsed()
+			var elapsed = cur_ticks - last_ticks
+			state.step( elapsed )
 			last_ticks = cur_ticks
 		}
 		
 		gl_clear_color(205/255, 216/255, 208/255,1)
 		gl_clear( GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT )
 
-		renderer.render( state )
+		renderer.render( state, main_viewport )
 		
 		sdl_gl_swap_window( app.window )
 	}

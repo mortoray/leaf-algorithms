@@ -209,4 +209,9 @@ literal SDL_PIXELFORMAT_RGBA8888 = 0x16462004
 	pixel_format : binary 32bit, flags : binary 32bit ) -> ( : SDL_Surface value_ptr) raw no_throw
 	
 @import( "SDL_GetTicks" )	 multi sdl_get_ticks : ( ) -> ( : binary 32bit ) raw no_throw
+@import( "SDL_GetPerformanceCounter" ) multi sdl_get_performance_counter : () -> ( : binary 64bit ) raw no_throw
+@import( "SDL_GetPerformanceFrequency" ) multi sdl_get_performance_frequency : () -> ( : binary 64bit ) raw no_throw
 
+defn get_elapsed = -> ( : float ) {
+	return lossy｢float｣(sdl_get_performance_counter()) / lossy｢float｣(sdl_get_performance_frequency())
+}

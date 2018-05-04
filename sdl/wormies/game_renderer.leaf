@@ -2,9 +2,15 @@ service game_renderer {
 	var ui : game_ui_renderer
 	var field : game_field_renderer
 	
-	defn render = ( state : shared game ) -> {
- 		field.render( state )
- 		ui.render( state )
+	defn render = ( state : shared game, region : viewport ) -> () {
+		var field_region = region
+		field_region.region_position.y = 40
+		field_region.region_size.y -= 40
+ 		field.render( state, field_region )
+ 		
+ 		var ui_region = region
+ 		ui_region.region_size.y = 40
+ 		ui.render( state, ui_region  )
 	}
 }
 
@@ -111,6 +117,34 @@ defn segment_point_angle = ( a : ipoint, b : ipoint ) -> {
 	return 3*math.pi/2
 }
 
+/*
+	Convert a position in region coordinates into GL-NDC coordinates.
+*/
+//TODO: add a kind of read-only value_ref //TODO: adding value_ref caused typing error instead of clean error msg
+defn point_to_ndc = ( region_point : GLfloat2, region : viewport ) -> ( : GLfloat2 ) {
+	var world_point : GLfloat2 = [
+		region_point.x - lossy(region.region_position.x),
+		region_point.y - lossy(region.region_position.y)
+	]
+	
+	return [
+		world_point.x / lossy(region.window_size.x) * 2 - 1,
+		(1 - world_point.y/ lossy(region.window_size.y)) * 2 - 1
+	]
+}
+
+/*
+	Convert a size in region coordinates into GL-NDC size-coordinates.
+*/
+defn size_to_ndc = ( region_size : GLfloat2, region : viewport ) -> ( : GLfloat2 ) {
+	var world_size : GLfloat2 = region_size
+	
+	return [
+		world_size.x / lossy(region.window_size.x) * 2,
+		-world_size.y / lossy(region.window_size.y) * 2
+	]
+}
+
 service game_ui_renderer {
 	var program : gl_program
 	
@@ -136,7 +170,7 @@ service game_ui_renderer {
 	defn default = -> construct {
 		var r = sdl_ttf_init()
 		std.println(["TTF: ", r])
-		font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 64 )
+		font = sdl_ttf_open_font( std.u8_encode( "font/leaf1.TTF" ).raw_ptr, 40 )
 		as_abi_ptr(font) == 0 then {
 			fail string_tag( "Font load failed" )
 		}
@@ -171,15 +205,15 @@ service game_ui_renderer {
 		index_data.push(3)
 		index_data.bind_and_push( GL_STATIC_DRAW )
 		
-		vertex_texcoord.push( [0,1] )
-		vertex_texcoord.push( [1,1] )
-		vertex_texcoord.push( [1,0] )
 		vertex_texcoord.push( [0,0] )
+		vertex_texcoord.push( [1,0] )
+		vertex_texcoord.push( [1,1] )
+		vertex_texcoord.push( [0,1] )
 		vertex_texcoord.bind_and_push( GL_STATIC_DRAW )
 		gl_vertex_attrib_pointer( tc_pos, 2, GL_FLOAT, GL_FALSE, 2 * GLfloat.aligned_value_size, 0 )
 	}
 	
-	defn render = ( state : shared game ) -> {
+	defn render = ( state : shared game, region : viewport ) -> {
 		state.score != last_score then {
 			text_score = gl_text_texture.from_text( font, std.integer_to_ascii(state.score) )
 			last_score = state.score
@@ -189,19 +223,25 @@ service game_ui_renderer {
 		gl_bind_vertex_array( vao )
 		check_gl_error( "vertex_attrib" )
 
-		_draw_text( getopt(text_title), [ -0.83, 0.95 ], 0.10 )
-		_draw_text( getopt(text_score), [ 0, 0.94 ], 0.1 )
+		//TODO: missing region gave incomplete typing
+		_draw_text( getopt(text_title), [ 0, 0 ], [ 0, 0], region )
+		_draw_text( getopt(text_score), [ lossy(region.region_size.x), 0 ], [ 1, 0 ], region )
 	}
 	
-	defn _draw_text =  ( text : gl_text_texture, pos : GLfloat2, height : GLfloat ) -> {
+	defn _draw_text =  ( text : gl_text_texture, pos : GLfloat2, rel_anchor : GLfloat2, region : viewport ) -> {
 		gl_active_texture(GL_TEXTURE0)
 		gl_bind_texture(GL_TEXTURE_2D, text.buffer)
 		program.set_uniform( tex_pos, 0 )
 		
 		var src_sz = text.size
-		var width = lossy｢GLfloat｣(src_sz.x) / 
-			lossy｢GLfloat｣(src_sz.y) * height
-		program.set_uniform( placement_pos, pos.x - width/2, pos.y - height/2, width, height)
+		var ndc_pos = point_to_ndc( pos, region )
+		//TODO: lossy(src_sz) 
+		var ndc_size = size_to_ndc( [ lossy(src_sz.x), lossy(src_sz.y) ], region )
+		//std.println([ndc_pos.x,",",ndc_pos.y,"  ", ndc_size.x,",",ndc_size.y])
+		
+		program.set_uniform( placement_pos, 
+			ndc_pos.x - rel_anchor.x * ndc_size.x, ndc_pos.y - rel_anchor.y * ndc_size.y, 
+			ndc_size.x, ndc_size.y)
 		
 		gl_bind_buffer( GL_ELEMENT_ARRAY_BUFFER, index_data.get_buffer() )
 		gl_draw_elements( GL_TRIANGLE_FAN, lossy(index_data.get_size()), GL_UNSIGNED_INT, 0 )
@@ -248,9 +288,9 @@ service game_field_renderer {
 		texture_pos = program.get_uniform_location( "tex" )
 		transform_pos = program.get_uniform_location( "transform" )
 		
-		std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
-		std.println(["Locations: ", vpos_pos, " ", vcolor_pos, " ", game_size_pos])
-		std.println(["Size: ", GLfloat3.aligned_value_size, " ", GLfloat.aligned_value_size])
+		//std.println([vertex_data.get_buffer(), " ", vertex_color.get_buffer(), " ", index_data.get_buffer()])
+		//std.println(["Locations: ", vpos_pos, " ", vcolor_pos, " ", game_size_pos])
+		//std.println(["Size: ", GLfloat3.aligned_value_size, " ", GLfloat.aligned_value_size])
 		
 		vao = gl_gen_vertex_array()
 		gl_bind_vertex_array( vao )
@@ -398,10 +438,10 @@ service game_field_renderer {
 		index_data.clear()
 	}
 	
-	defn render = ( state : shared game ) -> {
+	defn render = ( state : shared game, region : viewport ) -> {
 		var transform = identity_mat4()
-		transform.m22 = 0.95
-		transform.m42 = -0.05
+		transform.m22 = lossy｢GLfloat｣(region.region_size.y) / lossy｢GLfloat｣(region.window_size.y)
+		transform.m42 = -lossy｢GLfloat｣(region.region_position.y) / lossy｢GLfloat｣(region.window_size.y)
 		
 		program.use()
 		gl_bind_vertex_array( vao )
@@ -441,7 +481,11 @@ service game_field_renderer {
 		
 		_push_dot( state, state.eat_me, [1,1,1], partial_time, [3,1] )
 		_push_dot( state, state.chase_me, [1,1,1], partial_time, [1,2] )
-		_push_dot( state, state.monster, [1,1,1], partial_time, [0,4] )
+		_push_dot( state, state.monster, [1,1,1], partial_time, [1,4] )
+
+		for i in std.range(0,state.bushes.get_size()) {
+			_push_dot( state, state.bushes.get(i), [1,1,1], 1, [2,4] )
+		}
 		_render_vertex(getopt(foreground_tex).buffer)
 	}
 	

@@ -23,7 +23,7 @@ typedef game_dot : [
 	age : integer,
 ]
 
-literal frame_step_ticks = 150
+literal frame_step = 0.15
 
 class game {
 	var size : ipoint
@@ -36,6 +36,7 @@ class game {
 	var eat_me : game_dot
 	var chase_me : game_dot
 	var monster : game_dot
+	var bushes : collections.vector｢game_dot｣
 
 	var alive : boolean = true
 	var score : integer 
@@ -47,6 +48,17 @@ class game {
 		_set_next_eat_me()
 		_set_next_chase_me()
 		_set_next_monster()
+		
+		for i in std.range(0,15) {
+			_add_bush()
+		}
+	}
+	
+	defn _add_bush = -> {
+		var bush = _next_dot()
+		bush.dir = [0,0]
+		bush.age = 50
+		bushes.add( bush )
 	}
 	
 	defn _get_random_eat_loc = -> ( : ipoint ) {
@@ -68,10 +80,14 @@ class game {
 	
 	defn _next_dot = -> ( dot : game_dot ) {
 		dot.pos = _get_random_eat_loc()
-		dot.prev_pos = chase_me.pos
+		dot.prev_pos = dot.pos
 		dot.age = 0
+		dot.dir = _next_dir()
+	}
+	
+	defn _next_dir = -> { 
 		var dir = rand_integer( 0, 4 )
-		dot.dir = select(
+		return select(
 			dir == 0 ? [1,0],
 			dir == 1 ? [-1,0],
 			dir == 2 ? [0,1],
@@ -120,13 +136,13 @@ class game {
 		}
 		
 		_step_elapsed += elapsed
-		while _step_elapsed > frame_step_ticks {
+		while _step_elapsed > frame_step {
 			_step_quantized()
 			_step_check()
-			_step_elapsed -= frame_step_ticks
+			_step_elapsed -= frame_step
 		}
 		
-		partial_time = _step_elapsed / frame_step_ticks
+		partial_time = _step_elapsed / frame_step
 	}
 		
 	defn _step_quantized = -> {
@@ -157,16 +173,25 @@ class game {
 			_set_next_chase_me()
 		}
 		
+		equals( head_pos, monster.pos ) then {
+			alive = false
+		}
+		
 		_check_collision()
 	}
 	
 	defn _step_dot = ( what : game_dot ) -> ( : game_dot ) {
 		var dot = what
 		dot.prev_pos = dot.pos
-		dot.pos = [
+		var npos = [
 			mod( dot.pos.x + dot.dir.x, size.x ),
 			mod( dot.pos.y + dot.dir.y, size.y ),
 		]
+		_does_collide_board(npos) then {
+			dot.dir = _next_dir()
+		} else {
+			dot.pos = npos
+		}
 		dot.age += 1
 		return dot
 	}
@@ -176,19 +201,24 @@ class game {
 	}
 	
 	defn _check_collision = -> {
-		_does_collide() else return
+		_does_collide_board( head_pos, true ) else return
 		
 		alive = false
 	}
 	
-	defn _does_collide = -> ( : boolean ) {
-		var at = body.find( (pt) -> {
-			return equals( pt, head_pos )
+	defn _does_collide_board = ( pos : ipoint, exclude_head : boolean = false ) -> ( : boolean ) {
+		var at = bushes.find( (dot) -> {
+			return equals( dot.pos, pos )
+		})
+		has(at) then return true
+		
+		at = body.find( (pt) -> {
+			return equals( pt, pos )
 		})
 		//TODO: pattern matching somehow
 		has(at) then {
-			return getopt(at) != body.get_size()-1
+			return not exclude_head or getopt(at) != body.get_size()-1
 		}
-		return false
+		
 	}
 }
