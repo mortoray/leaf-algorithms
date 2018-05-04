@@ -1,0 +1,92 @@
+typedef GLfloat2 : [
+	x : GLfloat,
+	y : GLfloat,
+]
+defn sub = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
+	return [ a.x - b.x, a.y - b.y ]
+}
+defn mul = ( a : GLfloat2, b : float ) -> ( : GLfloat2 ) {
+	return [ lossy(a.x * b), lossy(a.y * b) ]
+}
+defn add = ( a : GLfloat2, b : GLfloat2 ) -> ( : GLfloat2 ) {
+	return [ a.x + b.x, a.y + b.y ]
+}
+defn GLfloat2_from = ( a : ipoint ) -> ( : GLfloat2 ) {
+	return [ lossy(a.x), lossy(a.y) ]
+}
+defn normalize = ( a : GLfloat2 ) -> ( : GLfloat2 ) {
+	var len = math.pow(a.x*a.x + a.y*a.y, 0.5)
+	return [ lossy(a.x / len), lossy(a.y / len) ]
+}
+
+defn identity_mat4 = -> ( : GLmat4 ) {
+	var m : GLmat4
+	m.m11 = 1
+	m.m12 = 0
+	m.m13 = 0
+	m.m14 = 0
+	m.m21 = 0
+	m.m22 = 1
+	m.m23 = 0
+	m.m24 = 0
+	m.m31 = 0
+	m.m32 = 0
+	m.m33 = 1
+	m.m34 = 0
+	m.m41 = 0
+	m.m42 = 0
+	m.m43 = 0
+	m.m44 = 1
+	return m
+}
+
+//limits to +/-1 on either axis assuming a wrap
+defn wrap_normal = ( a : ipoint ) -> ( : ipoint ) {
+	return [
+		a.x < -1 ? 1 | (a.x > 1 ? -1 | a.x),
+		a.y < -1 ? 1 | (a.y > 1 ? -1 | a.y)
+	]
+}
+
+typedef GLfloat3 : [
+	r : GLfloat,
+	g : GLfloat,
+	b : GLfloat,
+]
+
+defn lossy_glfloat3 = ( v ) -> ( : GLfloat3 ) {
+	return [ lossy(v#0), lossy(v#1), lossy(v#2) ]
+}
+
+defn clamp = param｢T｣( a : T, mn : T, mx : T ) -> ( : T ) {
+	return a < mn ? mn | (a > mx ? mx | a)
+}
+
+//  Assume 0 <=  a,b <= 2*pi
+defn close_angle = ( a : float, b : float ) -> {
+	var diff = math.abs(a - b)
+	diff < 0.1 then return true
+	diff > (2*math.pi-0.1) then return true
+	return false
+}
+//  0 when equal, 1 at 90 (basically dot-product like)
+defn angle_offset = ( a : float, b : float ) -> {
+	var diff = math.abs(a - b)
+	diff > math.pi then diff = 2*math.pi - diff
+
+	return clamp｢float｣( diff / (math.pi/2), 0, 1 )
+}
+defn lerp = ( a : GLfloat3, b : GLfloat3, t : float ) -> {
+	return [
+		(b.r - a.r) * t + a.r,
+		(b.g - a.g) * t + a.g,
+		(b.b - a.b) * t + a.b
+	]
+}
+
+defn max = (a,b) -> {
+	return a < b ? b | a
+}
+defn min = (a,b) -> {
+	return a < b ? a | b
+}

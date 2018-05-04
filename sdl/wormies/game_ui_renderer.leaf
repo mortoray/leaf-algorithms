@@ -1,0 +1,31 @@
+service game_ui_renderer {
+		
+	var generic : generic_ui_renderer
+	
+	//TODO: shouldn't need to be optional, initalized in `default`
+	var text_title : optional gl_text_texture
+	var text_score : optional gl_text_texture
+	
+	var last_score : integer  = 0
+	
+	defn default = -> construct {
+		text_title = gl_text_texture.from_text( generic.font, "Wormies" )
+		text_score = gl_text_texture.from_text( generic.font, "0" )
+	}
+	
+	defn render = ( state : shared game, region : viewport ) -> {
+		state.score != last_score then {
+			text_score = gl_text_texture.from_text( generic.font, std.integer_to_ascii(state.score) )
+			last_score = state.score
+		}
+
+		generic.start( region )
+
+		//TODO: missing region gave incomplete typing
+		generic.draw_text( getopt(text_title), [ 0, 0 ], [ 0, 0], region )
+		generic.draw_text( getopt(text_score), [ lossy(region.region_size.x), 0 ], [ 1, 0 ], region )
+		
+		generic.end()
+	}
+}
+

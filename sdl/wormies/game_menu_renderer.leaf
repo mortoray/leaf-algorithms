@@ -1,0 +1,9 @@
+service game_menu_renderer {
+	
+	defn default = -> construct {
+	}
+	
+	defn render = ( state : shared game, region : viewport ) -> {
+	}
+}
+
