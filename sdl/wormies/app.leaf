@@ -1,4 +1,4 @@
-//TODO: Leaf lacks enum's at the moment
+//FEATURE: Leaf lacks enum's at the moment
 literal stage_menu = 0
 literal stage_play = 1
 literal stage_game_over = 2

@@ -1,0 +1,3 @@
+# YAML format is temporary until we have our own project format
+libraries: [ SDL2, SDL2_ttf, SDL2_image, GL ]
+files: [ lib, wormies ]

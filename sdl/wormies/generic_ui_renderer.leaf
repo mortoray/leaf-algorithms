@@ -71,7 +71,7 @@ service generic_ui_renderer {
 	}
 	
 	defn draw_text =  ( text : gl_text_texture, pos : GLfloat2, rel_anchor : GLfloat2, region : viewport,
-		color : GLfloat4 ) -> {
+		color : GLfloat4 ) -> () {
 		gl_active_texture(GL_TEXTURE0)
 		gl_bind_texture(GL_TEXTURE_2D, text.buffer)
 		program.set_uniform( tex_pos, 0 )

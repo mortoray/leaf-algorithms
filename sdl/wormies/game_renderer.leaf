@@ -32,7 +32,7 @@ service game_renderer {
 /*
 	Convert a position in region coordinates into GL-NDC coordinates.
 */
-//TODO: add a kind of read-only value_ref //TODO: adding value_ref caused typing error instead of clean error msg
+//TODO: add a kind of read-only value_ref 
 defn point_to_ndc = ( region_point : GLfloat2, region : viewport ) -> ( : GLfloat2 ) {
 	var world_point : GLfloat2 = [
 		region_point.x - lossy(region.region_position.x),

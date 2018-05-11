@@ -177,7 +177,7 @@ service game_field_renderer {
 				ao = min( ao, angle_offset( angle, getopt(opt_next_angle) ) )
 			}
 				
-			//TODO: should lossy work on an entire tuple?
+			//FEATURE: should lossy work on an entire tuple?
 			vertex_norm.push( lossy_glfloat3( lerp( b_norm, a_norm, math.pow(ao,2) ) ) )
 		}
 		

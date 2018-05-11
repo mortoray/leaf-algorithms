@@ -1,4 +1,4 @@
-//TODO: implement == on tuples
+//FEATURE: implement == on tuples
 typedef ipoint : [
 	x : integer,
 	y : integer,
@@ -215,7 +215,7 @@ class game {
 		at = body.find( (pt) -> {
 			return equals( pt, pos )
 		})
-		//TODO: pattern matching somehow
+		//FEATURE: pattern matching somehow
 		has(at) then {
 			return not exclude_head or getopt(at) != body.get_size()-1
 		}
