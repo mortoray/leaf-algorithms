@@ -20,7 +20,7 @@ typedef viewport : [
 	region_size : ipoint,
 ]
 
-var pause = true
+var pause = false
 var last_ticks : float
 //TODO: caused init seg_fault
 //var renderer : game_renderer
@@ -118,19 +118,15 @@ defn key_stage_play = ( app_inst : shared game_app,
 	//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
 	key_ev.keysym.sym == SDLK_UP or key_ev.keysym.sym == SDLK_w then { 
 		app_inst.game_state.req_move(0,1) 
-		unpause()
 	}
 	key_ev.keysym.sym == SDLK_DOWN or key_ev.keysym.sym == SDLK_s then { 
 		app_inst.game_state.req_move(0,-1) 
-		unpause()
 	}
 	key_ev.keysym.sym == SDLK_LEFT or key_ev.keysym.sym == SDLK_a then { 
 		app_inst.game_state.req_move(-1,0) 
-		unpause()
 	}
 	key_ev.keysym.sym == SDLK_RIGHT or key_ev.keysym.sym == SDLK_d then { 
 		app_inst.game_state.req_move(1,0) 
-		unpause()
 	}
 	key_ev.keysym.sym == SDLK_PAUSE then { 
 		std.println(["Pause ", pause])

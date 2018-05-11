@@ -21,14 +21,19 @@ typedef game_dot : [
 	prev_pos : ipoint,
 	dir : ipoint,
 	age : integer,
+	warmup : float,
 ]
 
 literal frame_step = 0.15
 
+literal _worm_warmup_max = 3/2
+
 class game {
 	var size : ipoint
 	var head_pos : ipoint
-	var dir : ipoint
+	var dir : ipoint = [ 1, 0 ]
+	
+	var _warmup : float = _worm_warmup_max
 	var body : collections.vector｢ipoint｣
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 10
@@ -54,10 +59,15 @@ class game {
 		}
 	}
 	
+	defn get_warmup_rel = -> {
+		return _warmup / _worm_warmup_max
+	}
+	
 	defn _add_bush = -> {
 		var bush = _next_dot()
 		bush.dir = [0,0]
 		bush.age = 50
+		bush.warmup = 0
 		bushes.add( bush )
 	}
 	
@@ -83,6 +93,7 @@ class game {
 		dot.prev_pos = dot.pos
 		dot.age = 0
 		dot.dir = _next_dir()
+		dot.warmup = 2
 	}
 	
 	defn _next_dir = -> { 
@@ -129,9 +140,15 @@ class game {
 	var _step_elapsed : float
 	var partial_time : float = 1
 	
+	
 	defn step = ( elapsed : float ) -> {
 		alive else {
 			partial_time = 1 //may cause blip, but better than nothing appeaering
+			return
+		}
+		
+		_warmup > 0 then { 
+			_warmup -= elapsed
 			return
 		}
 		
@@ -197,7 +214,11 @@ class game {
 	}
 	
 	defn req_move = ( xoff : integer, yoff : integer ) -> {
-		req_dir.add( [ xoff, yoff ] )
+		_warmup > 0 then {
+			dir = [ xoff, yoff ]
+		} else {
+			req_dir.add( [ xoff, yoff ] )
+		}
 	}
 	
 	defn _check_collision = -> {

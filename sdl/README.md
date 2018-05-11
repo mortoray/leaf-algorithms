@@ -20,4 +20,5 @@ The code is split into a `lib` directory and one for each demo. You need both di
 
 	leaf --library SDL2 --library SDL2_image --library GL lib gl_demo
 	
+	leaf wormies.leafproj.yaml
 
