@@ -16,7 +16,13 @@ defn add = ( a : ipoint, b : ipoint ) -> ( : ipoint ) {
 	return [ a.x + b.x, a.y + b.y ]
 }
 
+literal gd_bush = 0
+literal gd_food_0 = 1
+literal gd_food_1 = 2
+literal gd_monster = 3
+
 typedef game_dot : [
+	what : integer,
 	pos : ipoint,
 	prev_pos : ipoint,
 	dir : ipoint,
@@ -38,10 +44,7 @@ class game {
 	var req_dir : collections.vector｢ipoint｣
 	var body_length : integer = 10
 	
-	var eat_me : game_dot
-	var chase_me : game_dot
-	var monster : game_dot
-	var bushes : collections.vector｢game_dot｣
+	var dots : collections.vector｢game_dot｣
 
 	var alive : boolean = true
 	var score : integer 
@@ -65,10 +68,11 @@ class game {
 	
 	defn _add_bush = -> {
 		var bush = _next_dot()
+		bush.what = gd_bush
 		bush.dir = [0,0]
 		bush.age = 50
 		bush.warmup = 0
-		bushes.add( bush )
+		dots.add( bush )
 	}
 	
 	defn _get_random_eat_loc = -> ( : ipoint ) {
@@ -78,14 +82,20 @@ class game {
 		]
 	}
 	defn _set_next_eat_me = -> {
-		eat_me = _next_dot()
-		eat_me.dir = [0,0]
+		var food = _next_dot()
+		food.what = gd_food_0
+		food.dir = [0,0]
+		dots.add( food )
 	}
 	defn _set_next_chase_me = -> {
-		chase_me = _next_dot()
+		var food =_next_dot()
+		food.what = gd_food_1
+		dots.add(food)
 	}
 	defn _set_next_monster = -> {
-		monster = _next_dot()
+		var monster = _next_dot()
+		monster.what = gd_monster
+		dots.add(monster)
 	}
 	
 	defn _next_dot = -> ( dot : game_dot ) {
@@ -93,7 +103,7 @@ class game {
 		dot.prev_pos = dot.pos
 		dot.age = 0
 		dot.dir = _next_dir()
-		dot.warmup = 2
+		dot.warmup = _worm_warmup_max
 	}
 	
 	defn _next_dir = -> { 
@@ -153,6 +163,7 @@ class game {
 		}
 		
 		_step_elapsed += elapsed
+		_step_warmup(elapsed)
 		while _step_elapsed > frame_step {
 			_step_quantized()
 			_step_check()
@@ -160,6 +171,16 @@ class game {
 		}
 		
 		partial_time = _step_elapsed / frame_step
+	}
+	
+	defn _step_warmup = ( elapsed : float ) -> {
+		for ndx in std.range(0, dots.get_size()) {
+			var dot = dots.get(ndx)
+			dot.warmup > 0 then {
+				dot.warmup -= elapsed
+				dots.set(ndx, dot)
+			}
+		}
 	}
 		
 	defn _step_quantized = -> {
@@ -172,26 +193,32 @@ class game {
 			_move( dir.x, dir. y)
 		}
 		
-		eat_me = _step_dot( eat_me )
-		chase_me = _step_dot( chase_me )
-		monster = _step_dot( monster )
+		for ndx in std.range(0, dots.get_size()) {
+			dots.set(ndx, _step_dot( dots.get(ndx) ))
+		}
 	}
 	
 	defn _step_check = -> {
-		_eaten( eat_me ) then {
-			score += 1
-			body_length += 2
-			_set_next_eat_me()
-		}
+		for ndx in std.incl_range(dots.get_size()-1,0) {
+			var dot = dots.get(ndx)
+			
+			dot.what == gd_food_0 and _eaten(dot) then {
+				score += 1
+				body_length += 2
+				dots.remove( ndx )
+				_set_next_eat_me()
+			}
 		
-		_eaten( chase_me ) then {
-			score += 2
-			body_length += 3
-			_set_next_chase_me()
-		}
+			dot.what == gd_food_1 and _eaten(dot) then {
+				score += 2
+				body_length += 3
+				dots.remove( ndx )
+				_set_next_chase_me()
+			}
 		
-		equals( head_pos, monster.pos ) then {
-			alive = false
+			(dot.what == gd_monster or dot.what == gd_bush) and equals( head_pos, dot.pos ) then {
+				alive = false
+			}
 		}
 		
 		_check_collision()
@@ -200,11 +227,16 @@ class game {
 	defn _step_dot = ( what : game_dot ) -> ( : game_dot ) {
 		var dot = what
 		dot.prev_pos = dot.pos
+		
+ 		dot.warmup > 0 then {
+ 			return dot
+ 		}
+		
 		var npos = [
 			mod( dot.pos.x + dot.dir.x, size.x ),
 			mod( dot.pos.y + dot.dir.y, size.y ),
 		]
-		_does_collide_board(npos) then {
+		dot.what != gd_bush and _does_collide_board(npos) then {
 			dot.dir = _next_dir()
 		} else {
 			dot.pos = npos
@@ -228,12 +260,14 @@ class game {
 	}
 	
 	defn _does_collide_board = ( pos : ipoint, exclude_head : boolean = false ) -> ( : boolean ) {
-		var at = bushes.find( (dot) -> {
-			return equals( dot.pos, pos )
-		})
-		has(at) then return true
+		for ndx in std.incl_range(dots.get_size()-1,0) {
+			var dot = dots.get(ndx)
+			dot.what != gd_bush then next
+			
+			equals( dot.pos, pos ) then return true
+		}
 		
-		at = body.find( (pt) -> {
+		var at = body.find( (pt) -> {
 			return equals( pt, pos )
 		})
 		//FEATURE: pattern matching somehow
