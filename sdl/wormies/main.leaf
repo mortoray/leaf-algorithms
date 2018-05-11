@@ -78,6 +78,7 @@ var run = -> {
 	}
 }
 
+//TODO: can't remove the duplication until we have interface/trait support
 defn key_stage_menu = ( app_inst : shared game_app, 
 	renderer : game_renderer, key_ev : SDL_KeyboardEvent value_ptr ) -> {
 	
@@ -87,7 +88,7 @@ defn key_stage_menu = ( app_inst : shared game_app,
 	key_ev.keysym.sym == SDLK_DOWN then { 
 		renderer.menu.down()
 	}
-	key_ev.keysym.sym == SDLK_SPACE then {
+	key_ev.keysym.sym == SDLK_SPACE or key_ev.keysym.sym == SDLK_RETURN then {
 		renderer.menu.activate( app_inst )
 	}
 }
@@ -101,9 +102,8 @@ defn key_stage_game_over = ( app_inst : shared game_app,
 	key_ev.keysym.sym == SDLK_DOWN then { 
 		renderer.game_over.down()
 	}
-	key_ev.keysym.sym == SDLK_SPACE then {
+	key_ev.keysym.sym == SDLK_SPACE or key_ev.keysym.sym == SDLK_RETURN then {
 		renderer.game_over.activate( app_inst )
-		std.println(["Space OVer ", app_inst.stage])
 	}
 }
 
@@ -116,19 +116,19 @@ defn key_stage_play = ( app_inst : shared game_app,
 	}
 	
 	//std.println(["KeyDown Sym:", key_ev.keysym.sym, " Mod:", key_ev.keysym.mod])
-	key_ev.keysym.sym == SDLK_UP then { 
+	key_ev.keysym.sym == SDLK_UP or key_ev.keysym.sym == SDLK_w then { 
 		app_inst.game_state.req_move(0,1) 
 		unpause()
 	}
-	key_ev.keysym.sym == SDLK_DOWN then { 
+	key_ev.keysym.sym == SDLK_DOWN or key_ev.keysym.sym == SDLK_s then { 
 		app_inst.game_state.req_move(0,-1) 
 		unpause()
 	}
-	key_ev.keysym.sym == SDLK_LEFT then { 
+	key_ev.keysym.sym == SDLK_LEFT or key_ev.keysym.sym == SDLK_a then { 
 		app_inst.game_state.req_move(-1,0) 
 		unpause()
 	}
-	key_ev.keysym.sym == SDLK_RIGHT then { 
+	key_ev.keysym.sym == SDLK_RIGHT or key_ev.keysym.sym == SDLK_d then { 
 		app_inst.game_state.req_move(1,0) 
 		unpause()
 	}
